@@ -1,0 +1,218 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Vesper WebUI — MessageTimeline Styles
+ *
+ * Expandable menu-style navigation for user messages.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ===== Container (Collapsed) ===== */
+.message-timeline {
+  position: absolute;
+  right: 0;
+  top: 60px;
+  bottom: 120px;
+  width: 24px;
+  pointer-events: auto;
+  z-index: 10;
+  transition: width 0.2s ease, background 0.2s ease;
+}
+
+/* ===== Container (Expanded) ===== */
+.message-timeline--expanded {
+  width: 280px;
+  background: var(--bg-primary);
+  border-left: 1px solid var(--border-color);
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== Vertical Line (Collapsed) ===== */
+.message-timeline__line {
+  position: absolute;
+  left: 11px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border-color);
+  border-radius: 1px;
+}
+
+/* ===== Node (Collapsed) ===== */
+.message-timeline__node {
+  position: absolute;
+  left: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transform: translateY(-50%);
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.message-timeline__node--visible {
+  width: 12px;
+  height: 12px;
+  left: 6px;
+  background: var(--accent-blue);
+  box-shadow: 0 0 8px rgba(91, 168, 208, 0.4);
+}
+
+/* Hover effect on collapsed nodes */
+.message-timeline:hover .message-timeline__node--visible {
+  background: var(--accent-orange);
+  box-shadow: 0 0 8px rgba(229, 160, 123, 0.4);
+}
+
+/* ===== Menu (Expanded) ===== */
+.message-timeline__menu {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  animation: slide-in-right var(--transition-base);
+}
+
+/* Slide-in animation for expanded menu */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.message-timeline__menu-header {
+  padding: 12px 16px;
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.message-timeline__menu-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0;
+}
+
+/* ===== Menu Item ===== */
+.message-timeline__menu-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.message-timeline__menu-item:hover,
+.message-timeline__menu-item--hovered {
+  background: var(--bg-hover);
+}
+
+.message-timeline__menu-item--visible {
+  border-left: 2px solid var(--accent-blue);
+  padding-left: 14px;
+}
+
+.message-timeline__menu-item--visible:hover,
+.message-timeline__menu-item--visible.message-timeline__menu-item--hovered {
+  border-left-color: var(--accent-orange);
+}
+
+/* ===== Menu Item: Index ===== */
+.message-timeline__menu-index {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 24px;
+}
+
+.message-timeline__menu-item--visible .message-timeline__menu-index {
+  color: var(--accent-blue);
+}
+
+.message-timeline__menu-item--visible:hover .message-timeline__menu-index,
+.message-timeline__menu-item--visible.message-timeline__menu-item--hovered .message-timeline__menu-index {
+  color: var(--accent-orange);
+}
+
+/* ===== Menu Item: Text ===== */
+.message-timeline__menu-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ===== Scrollbar (Menu List) ===== */
+.message-timeline__menu-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.message-timeline__menu-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.message-timeline__menu-list::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.message-timeline__menu-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ===== Responsive: Mobile ===== */
+@media (max-width: 768px) {
+  .message-timeline {
+    display: none;
+  }
+}
+
+/* ===== Mobile Floating Button ===== */
+.message-timeline-mobile-btn {
+  animation: none;
+}
+
+.message-timeline-mobile-btn:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+/* ===== Mobile Slide-Up Animation ===== */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  .message-timeline,
+  .message-timeline__node,
+  .message-timeline__menu-item {
+    transition: none;
+  }
+}

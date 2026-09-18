@@ -1,0 +1,1160 @@
+/* =============================================================================
+ * Vesper WebUI — TUI Style CSS
+ *
+ * Monospace terminal aesthetic: dark background, ANSI colors, tree borders.
+ * All color tokens reference the theme.ts values via CSS custom properties.
+ * ============================================================================= */
+
+:root {
+  /* ===========================================================================
+   * Background tones - Lighter, more breathable
+   * =========================================================================== */
+  --bg-primary: #282C34;
+  --bg-secondary: #2E3338;
+  --bg-tertiary: #353B45;
+  --bg-hover: #3E4452;
+  --bg-active: #4B5263;
+  --bg-overlay: rgba(0, 0, 0, 0.2);
+
+  /* ===========================================================================
+   * Text tones - Lower contrast, easier on eyes
+   * =========================================================================== */
+  --text-primary: #D4D4D4;
+  --text-secondary: #ABB2BF;
+  --text-muted: #5C6370;
+
+  /* ===========================================================================
+   * Chrome & borders - Softer edges
+   * =========================================================================== */
+  --border-color: #3E4452;
+  --separator-color: #4B5263;
+  --selection-bg: #3E4759;
+  --selection-highlight: rgba(255, 255, 255, 0.05);
+
+  /* ===========================================================================
+   * Modern Design Tokens - Border radius & Shadow system
+   * =========================================================================== */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.25);
+
+  /* ===========================================================================
+   * Typography System - Font families & size scale
+   * =========================================================================== */
+  --font-ui: system-ui, -apple-system, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  --font-code: 'Consolas', 'Monaco', 'Courier New', monospace;
+
+  /* Font size scale */
+  --font-size-xs: 11px;    /* Tiny labels, badges */
+  --font-size-sm: 12px;    /* Secondary text, captions */
+  --font-size-base: 14px;  /* Body text */
+  --font-size-lg: 16px;    /* Headers, titles */
+  --font-size-xl: 18px;    /* Large headers */
+
+  /* Font weight scale */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* ===========================================================================
+   * Animation & Transition Tokens
+   * =========================================================================== */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ===========================================================================
+   * ANSI palette - Warmer tones
+   * =========================================================================== */
+  --ansi-black: #282C34;
+  --ansi-red: #E06C75;
+  --ansi-green: #98C379;
+  --ansi-yellow: #E5C07B;
+  --ansi-blue: #61AFEF;
+  --ansi-magenta: #C678DD;
+  --ansi-cyan: #56B6C2;
+  --ansi-white: #D4D4D4;
+  --ansi-bright-black: #5C6370;
+  --ansi-bright-red: #F14C4C;
+  --ansi-bright-green: #23D18B;
+  --ansi-bright-yellow: #F5F543;
+  --ansi-bright-blue: #3B8EEA;
+  --ansi-bright-magenta: #D670D6;
+  --ansi-bright-cyan: #29B8DB;
+  --ansi-bright-white: #F5F5F5;
+  --cursor-color: #AEAFAD;
+
+  /* ===========================================================================
+   * Accent Colors - Semantic highlights
+   * =========================================================================== */
+
+  /* Orange - Claude brand, assistant, thinking */
+  --accent-orange: #E5A07B;
+
+  /* Blue - IDE style, system, links */
+  --accent-blue: #5BA8D0;
+
+  /* Purple - Auto-accept, special highlights */
+  --accent-purple: #C678DD;
+
+  /* Blue-purple - Suggestions, dialogs */
+  --accent-bluepurple: #B8C0E8;
+
+  /* ===========================================================================
+   * Button text colors - White for colored backgrounds in dark theme
+   * =========================================================================== */
+
+  --btn-primary-text: #FFFFFF;
+  --btn-secondary-text: #FFFFFF;
+
+  /* ===========================================================================
+   * Status Colors - Success, warning, error
+   * =========================================================================== */
+
+  --status-success: #5EB76B;
+  --status-success-dark: #5a8a5a;
+  --status-success-light: #7ac87a;
+  --status-warning: #D19A66;
+  --status-warning-dark: #7a5a00;
+  --status-warning-bg: rgba(232, 168, 56, 0.08);
+  --status-error: #E06C75;
+  --status-error-dark: #a33;
+  --status-error-light: #e55;
+  --status-pending: #5C6370;
+
+  /* ===========================================================================
+   * Drag & Drop - Tab dock drop squares (up/down/left/right/center)
+   * =========================================================================== */
+
+  --drop-square-bg: #353B45;       /* slightly lighter than bg-primary for soft contrast */
+  --drop-square-fg: #ABB2BF;       /* soft light-gray direction symbol */
+  --drop-square-border: #4B5263;   /* visible but gentle border */
+  --drop-square-hover-bg: #5BA8D0; /* accent blue highlight on hover */
+  --drop-square-hover-fg: #FFFFFF; /* white symbol on highlighted square */
+
+  /* ===========================================================================
+   * User Input - Prompt area
+   * =========================================================================== */
+
+  --prompt-marker: #ABB2BF;
+  --prompt-text: #1E1E1E;
+  --prompt-bg: #D4E8F2;
+
+  /* ===========================================================================
+   * Assistant Output
+   * =========================================================================== */
+
+  --assistant-dot: #E5A07B;
+
+  /* ===========================================================================
+   * System Messages
+   * =========================================================================== */
+
+  --system-dot: #5BA8D0;
+  --system-label: #5BA8D0;
+  --system-text: #5C6370;
+
+  /* ===========================================================================
+   * Thinking Panel
+   * =========================================================================== */
+
+  --thinking-dot: #E5A07B;
+  --thinking-label: #E5A07B;
+  --thinking-content: #5C6370;
+
+  /* ===========================================================================
+   * Tool Calls
+   * =========================================================================== */
+
+  --tool-name: #B8C0E8;
+  --tool-success: #5EB76B;
+  --tool-error: #E06C75;
+  --tool-pending: #5C6370;
+  --tool-args: #5C6370;
+  --tool-result: #5C6370;
+
+  /* ===========================================================================
+   * Status Bar
+   * =========================================================================== */
+
+  --statusbar-model: #5C6370;
+  --statusbar-budget-normal: #5C6370;
+  --statusbar-budget-warn: #D19A66;
+  --statusbar-budget-critical: #E06C75;
+  --statusbar-stack: #C678DD;
+  --statusbar-supervisor: #D19A66;
+  --statusbar-provider: #56B6C2;
+
+  /* ===========================================================================
+   * Pending Sidebands
+   * =========================================================================== */
+
+  --pending-icon: #D19A66;
+  --pending-text: #D19A66;
+
+  /* ===========================================================================
+   * Permission Dialog
+   * =========================================================================== */
+
+  --permission-border: #B8C0E8;
+  --permission-header: #B8C0E8;
+  --permission-tool: #5BA8D0;
+  --permission-allow-once: #5EB76B;
+  --permission-allow-always: #5BA8D0;
+  --permission-deny: #E06C75;
+
+  /* ===========================================================================
+   * Ask User Dialog
+   * =========================================================================== */
+
+  --askuser-border: #B8C0E8;
+  --askuser-header: #B8C0E8;
+  --askuser-question: #D4D4D4;
+  --askuser-option-label: #B8C0E8;
+  --askuser-option-desc: #5C6370;
+  --askuser-selected: #5EB76B;
+  --askuser-other: #C678DD;
+  --askuser-chip: #5BA8D0;
+
+  /* ===========================================================================
+   * Agent Spinner
+   * =========================================================================== */
+
+  --spinner-active: #E5A07B;
+  --spinner-idle: #5C6370;
+
+  /* ===========================================================================
+   * Welcome Banner
+   * =========================================================================== */
+
+  --banner-mascot: #4FA6C7;
+  --banner-title: #D4D4D4;
+  --banner-subtext: #5C6370;
+  --banner-border: #3E4452;
+
+  /* ===========================================================================
+   * Errors
+   * =========================================================================== */
+
+  --error-text: #E06C75;
+  --error-dot: #E06C75;
+
+  /* ===========================================================================
+   * Task Panel
+   * =========================================================================== */
+
+  --task-tree: #4B5263;
+  --task-done: #5EB76B;
+  --task-in-progress: #D19A66;
+  --task-pending: #D4D4D4;
+  --task-header: #5C6370;
+  --task-active-form: #C678DD;
+  --task-title-star: #E5A07B;
+
+  /* ===========================================================================
+   * Canvas Browser
+   * =========================================================================== */
+
+  --canvas-border: #5BA8D0;
+  --canvas-header: #5BA8D0;
+  --canvas-selected: #D4D4D4;
+  --canvas-folded: #5C6370;
+  --canvas-pinned: #D19A66;
+  --canvas-tokens: #5C6370;
+
+  /* ===========================================================================
+   * Autocomplete Menu
+   * =========================================================================== */
+
+  --autocomplete-highlight: #3E4759;
+  --autocomplete-command: #B8C0E8;
+  --autocomplete-description: #5C6370;
+
+  /* ===========================================================================
+   * Misc
+   * =========================================================================== */
+
+  --streaming-cursor: #E5A07B;
+  --tree-border: #4B5263;
+
+  /* ===========================================================================
+   * Markdown Rendering
+   * =========================================================================== */
+
+  --md-heading: #5EB76B;
+  --md-first-heading: #C678DD;
+  --md-code: #E5A07B;
+  --md-codespan: #E5A07B;
+  --md-blockquote: #5C6370;
+  --md-link: #5BA8D0;
+  --md-href: #5BA8D0;
+
+  /* ===========================================================================
+   * Diff View
+   * =========================================================================== */
+
+  --diff-added: #5EB76B;
+  --diff-removed: #E06C75;
+  --diff-added-bg: #2D4A3E;
+  --diff-removed-bg: #4A2D3A;
+  --diff-added-highlight: #5EB76B;
+  --diff-removed-highlight: #E06C75;
+  --diff-content: #D4D4D4;
+  --diff-context: #5C6370;
+  --diff-hunk-header: #6FA0C8;
+  --diff-line-number: #4B5263;
+  --diff-file-path: #B8C0E8;
+
+  /* ===========================================================================
+   * Code Syntax Highlighting - One Dark Pro palette
+   * =========================================================================== */
+
+  --code-keyword: #C678DD;
+  --code-string: #98C379;
+  --code-number: #D19A66;
+  --code-comment: #5C6370;
+  --code-function: #61AFEF;
+  --code-builtin: #56B6C2;
+  --code-literal: #C678DD;
+  --code-type: #56B6C2;
+  --code-regexp: #E06C75;
+  --code-meta: #ABB2BF;
+  --code-tag: #E06C75;
+  --code-attr: #D19A66;
+  --code-name: #E06C75;
+  --code-variable: #E5C07B;
+  --code-title: #61AFEF;
+  --code-params: #ABB2BF;
+  --code-addition: #98C379;
+  --code-deletion: #E06C75;
+}
+
+/* =============================================================================
+ * Light Theme - One Light / VSCode Light+ inspired
+ * ============================================================================= */
+
+[data-theme="light"] {
+  /* ===========================================================================
+   * Background tones - Warm Paper & Slate Workspace palette
+   * =========================================================================== */
+  --bg-primary: #FDFCFA;       /* Main canvas: warm, crisp linen white */
+  --bg-secondary: #F5F3ED;     /* Sidebar & bars: warm muted paper */
+  --bg-tertiary: #EBE8DF;      /* Cards & subtle containers */
+  --bg-hover: #E2DDD0;         /* Clear, visible hover state on sidebar & tabs */
+  --bg-active: #D5CFC0;        /* Pressed / active item */
+  --bg-overlay: rgba(27, 77, 68, 0.05);
+
+  /* ===========================================================================
+   * Text tones - High legibility, warm editorial hierarchy
+   * =========================================================================== */
+  --text-primary: #1F2421;     /* Near-black deep charcoal with warm undertone */
+  --text-secondary: #4A4D4A;   /* Muted body text */
+  --text-muted: #787A77;       /* Captions & metadata */
+
+  /* ===========================================================================
+   * Chrome & borders - Hairline, subtle elegance
+   * =========================================================================== */
+  --border-color: #E2DFD7;
+  --separator-color: #ECE9E1;
+  --selection-bg: #DCE8E4;     /* Soft teal tint */
+  --selection-highlight: rgba(27, 77, 68, 0.06);
+
+  /* ===========================================================================
+   * Modern Design Tokens - Border radius & Shadow system
+   * =========================================================================== */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(27, 77, 68, 0.06);
+  --shadow-lg: 0 8px 24px rgba(27, 77, 68, 0.08);
+  --shadow-elevated: 0 12px 32px rgba(27, 77, 68, 0.12);
+
+  /* ===========================================================================
+   * ANSI palette - Darker variants for light background
+   * =========================================================================== */
+  --ansi-black: #1E1E1E;
+  --ansi-red: #C82834;
+  --ansi-green: #19854B;
+  --ansi-yellow: #B07D28;
+  --ansi-blue: #0066CC;
+  --ansi-magenta: #A626A4;
+  --ansi-cyan: #008080;
+  --ansi-white: #1E1E1E;
+  --ansi-bright-black: #6E7681;
+  --ansi-bright-red: #E05050;
+  --ansi-bright-green: #2DAA5E;
+  --ansi-bright-yellow: #D9A84C;
+  --ansi-bright-blue: #3794FF;
+  --ansi-bright-magenta: #C85FC8;
+  --ansi-bright-cyan: #10B0B0;
+  --ansi-bright-white: #555555;
+  --cursor-color: #555555;
+
+  /* ===========================================================================
+   * Accent Colors - Semantic highlights (deep variants for light bg)
+   * =========================================================================== */
+
+  /* Orange - Claude brand, assistant, thinking */
+  --accent-orange: #C45A3B;
+
+  /* Blue - IDE style, system, links */
+  --accent-blue: #2B7DB8;
+
+  /* Purple - Auto-accept, special highlights */
+  --accent-purple: #8B4BC4;
+
+  /* Blue-purple - Suggestions, dialogs */
+  --accent-bluepurple: #4B5BA8;
+
+  /* ===========================================================================
+   * Button text colors - White for colored backgrounds in light theme
+   * =========================================================================== */
+
+  --btn-primary-text: #FFFFFF;
+  --btn-secondary-text: #FFFFFF;
+
+  /* ===========================================================================
+   * Status Colors - Success, warning, error (deep variants)
+   * =========================================================================== */
+
+  --status-success: #2D8B3D;
+  --status-success-dark: #1A5A28;
+  --status-success-light: #3DA84D;
+  --status-warning: #B8703B;
+  --status-warning-dark: #7A4A1A;
+  --status-warning-bg: rgba(184, 112, 59, 0.08);
+  --status-error: #C42B2B;
+  --status-error-dark: #8A1A1A;
+  --status-error-light: #E54545;
+  --status-pending: #6E6E6E;
+
+  /* ===========================================================================
+   * Drag & Drop - Tab dock drop squares (up/down/left/right/center)
+   * =========================================================================== */
+
+  --drop-square-bg: #E8E8E8;       /* light gray, distinct from white bg-primary */
+  --drop-square-fg: #383A42;       /* dark gray direction symbol */
+  --drop-square-border: #C8C8C8;   /* visible border on light background */
+  --drop-square-bg: #EAE6DD;
+  --drop-square-fg: #505450;
+  --drop-square-border: #D4CFBF;
+  --drop-square-hover-bg: #1B4D44;
+  --drop-square-hover-fg: #FFFFFF;
+
+  /* ===========================================================================
+   * User Input - Floating Island style & Prompt Card
+   * =========================================================================== */
+
+  --prompt-marker: #1B4D44;
+  --prompt-text: #1F2421;
+  --prompt-bg: #EBE8DF;
+
+  /* ===========================================================================
+   * Assistant Output
+   * =========================================================================== */
+
+  --assistant-dot: #C45A3B;
+
+  /* ===========================================================================
+   * System Messages
+   * =========================================================================== */
+
+  --system-dot: #2B7DB8;
+  --system-label: #2B7DB8;
+  --system-text: #6E6E6E;
+
+  /* ===========================================================================
+   * Thinking Panel
+   * =========================================================================== */
+
+  --thinking-dot: #C45A3B;
+  --thinking-label: #C45A3B;
+  --thinking-content: #6E6E6E;
+
+  /* ===========================================================================
+   * Tool Calls
+   * =========================================================================== */
+
+  --tool-name: #4B5BA8;
+  --tool-success: #2D8B3D;
+  --tool-error: #C42B2B;
+  --tool-pending: #6E6E6E;
+  --tool-args: #6E6E6E;
+  --tool-result: #6E6E6E;
+
+  /* ===========================================================================
+   * Status Bar
+   * =========================================================================== */
+
+  --statusbar-model: #6E6E6E;
+  --statusbar-budget-normal: #6E6E6E;
+  --statusbar-budget-warn: #B8703B;
+  --statusbar-budget-critical: #C42B2B;
+  --statusbar-stack: #8B4BC4;
+  --statusbar-supervisor: #B8703B;
+  --statusbar-provider: #2B8B8B;
+
+  /* ===========================================================================
+   * Pending Sidebands
+   * =========================================================================== */
+
+  --pending-icon: #B8703B;
+  --pending-text: #B8703B;
+
+  /* ===========================================================================
+   * Permission Dialog
+   * =========================================================================== */
+
+  --permission-border: #4B5BA8;
+  --permission-header: #4B5BA8;
+  --permission-tool: #2B7DB8;
+  --permission-allow-once: #2D8B3D;
+  --permission-allow-always: #2B7DB8;
+  --permission-deny: #C42B2B;
+
+  /* ===========================================================================
+   * Ask User Dialog
+   * =========================================================================== */
+
+  --askuser-border: #4B5BA8;
+  --askuser-header: #4B5BA8;
+  --askuser-question: #1E1E1E;
+  --askuser-option-label: #4B5BA8;
+  --askuser-option-desc: #6E6E6E;
+  --askuser-selected: #2D8B3D;
+  --askuser-other: #8B4BC4;
+  --askuser-chip: #2B7DB8;
+
+  /* ===========================================================================
+   * Agent Spinner
+   * =========================================================================== */
+
+  --spinner-active: #C45A3B;
+  --spinner-idle: #6E6E6E;
+
+  /* ===========================================================================
+   * Welcome Banner
+   * =========================================================================== */
+
+  --banner-mascot: #2B8B8B;
+  --banner-title: #1E1E1E;
+  --banner-subtext: #6E6E6E;
+  --banner-border: #D4D4D4;
+
+  /* ===========================================================================
+   * Errors
+   * =========================================================================== */
+
+  --error-text: #C42B2B;
+  --error-dot: #C42B2B;
+
+  /* ===========================================================================
+   * Task Panel
+   * =========================================================================== */
+
+  --task-tree: #C8C8C8;
+  --task-done: #2D8B3D;
+  --task-in-progress: #B8703B;
+  --task-pending: #1E1E1E;
+  --task-header: #6E6E6E;
+  --task-active-form: #8B4BC4;
+  --task-title-star: #C45A3B;
+
+  /* ===========================================================================
+   * Canvas Browser
+   * =========================================================================== */
+
+  --canvas-border: #2B7DB8;
+  --canvas-header: #2B7DB8;
+  --canvas-selected: #1E1E1E;
+  --canvas-folded: #6E6E6E;
+  --canvas-pinned: #B8703B;
+  --canvas-tokens: #6E6E6E;
+
+  /* ===========================================================================
+   * Autocomplete Menu
+   * =========================================================================== */
+
+  --autocomplete-highlight: #E8E8E8;
+  --autocomplete-command: #4B5BA8;
+  --autocomplete-description: #6E6E6E;
+
+  /* ===========================================================================
+   * Misc
+   * =========================================================================== */
+
+  --streaming-cursor: #C45A3B;
+  --tree-border: #C8C8C8;
+
+  /* ===========================================================================
+   * Markdown Rendering
+   * =========================================================================== */
+
+  --md-heading: #2D8B3D;
+  --md-first-heading: #8B4BC4;
+  --md-code: #C45A3B;
+  --md-codespan: #C45A3B;
+  --md-blockquote: #6E6E6E;
+  --md-link: #2B7DB8;
+  --md-href: #2B7DB8;
+
+  /* ===========================================================================
+   * Diff View
+   * =========================================================================== */
+
+  --diff-added: #2D8B3D;
+  --diff-removed: #C42B2B;
+  --diff-added-bg: #E8F5E8;
+  --diff-removed-bg: #F5E8E8;
+  --diff-added-highlight: #2D8B3D;
+  --diff-removed-highlight: #C42B2B;
+  --diff-content: #1E1E1E;
+  --diff-context: #6E6E6E;
+  --diff-hunk-header: #2B7DB8;
+  --diff-line-number: #C8C8C8;
+  --diff-file-path: #4B5BA8;
+
+  /* ===========================================================================
+   * Code Syntax Highlighting - One Light palette
+   * =========================================================================== */
+
+  --code-keyword: #A626A4;
+  --code-string: #19854B;
+  --code-number: #B07D28;
+  --code-comment: #6E7681;
+  --code-function: #2B7DB8;
+  --code-builtin: #2B8B8B;
+  --code-literal: #A626A4;
+  --code-type: #2B8B8B;
+  --code-regexp: #C42B2B;
+  --code-meta: #383A42;
+  --code-tag: #C42B2B;
+  --code-attr: #B07D28;
+  --code-name: #C42B2B;
+  --code-variable: #B07D28;
+  --code-title: #2B7DB8;
+  --code-params: #383A42;
+  --code-addition: #19854B;
+  --code-deletion: #C42B2B;
+}
+
+/* Global reset for TUI look & modern UI typography */
+html, body, #root {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Typography Classes
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* UI text - use system font for better readability */
+.tui-text {
+  font-family: var(--font-ui);
+}
+
+.tui-text-xs {
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-normal);
+  color: var(--text-muted);
+}
+
+.tui-text-sm {
+  font-family: var(--font-ui);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--text-secondary);
+}
+
+.tui-text-base {
+  font-family: var(--font-ui);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  color: var(--text-primary);
+}
+
+.tui-text-lg {
+  font-family: var(--font-ui);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.tui-text-xl {
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+/* Code text - preserve monospace */
+.tui-code {
+  font-family: var(--font-code);
+  font-size: var(--font-size-base);
+}
+
+/* Scrollbar styling - default hidden, show on hover */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+  background: transparent;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Expand scrollbar on container hover */
+*:hover::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*:hover::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent var(--bg-primary);
+}
+*:hover {
+  scrollbar-color: var(--text-muted) var(--bg-primary);
+}
+
+/* Selection */
+::selection {
+  background: var(--selection-bg);
+  color: var(--text-primary);
+}
+
+/* Separator line */
+.tui-separator {
+  border: none;
+  border-top: 1px solid var(--separator-color);
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Animation Classes
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Smooth transitions for panels and modals */
+.tui-transition {
+  transition: all var(--transition-base);
+}
+
+.tui-transition-fast {
+  transition: all var(--transition-fast);
+}
+
+/* Slide-in animation for new messages */
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tui-slide-in {
+  animation: slide-in-up var(--transition-base);
+}
+
+/* Fade-in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tui-fade-in {
+  animation: fade-in var(--transition-base);
+}
+
+/* Scale-in animation for modals and dialogs */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.tui-scale-in {
+  animation: scale-in var(--transition-base);
+}
+
+/* Scale-out animation for closing modals */
+@keyframes scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+.tui-scale-out {
+  animation: scale-out var(--transition-base);
+}
+
+/* Fade-out animation */
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.tui-fade-out {
+  animation: fade-out var(--transition-base);
+}
+
+/* Tool completion animation */
+@keyframes tool-complete {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.tui-tool-complete {
+  animation: tool-complete 0.4s var(--ease-out);
+}
+
+/* Blinking cursor animation */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.tui-cursor {
+  animation: blink 1s step-end infinite;
+  color: var(--ansi-cyan);
+}
+
+/* Spinner animation — hue cycling */
+@keyframes hue-cycle {
+  0%   { color: #BC3FBC; }
+  16%  { color: #CD3131; }
+  33%  { color: #E5E510; }
+  50%  { color: #0DBC79; }
+  66%  { color: #11A8CD; }
+  83%  { color: #2472C8; }
+  100% { color: #BC3FBC; }
+}
+
+.tui-spinner-hue {
+  animation: hue-cycle 3s linear infinite;
+}
+
+/* Dot indicator pulse (pending tool) */
+@keyframes dot-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.tui-dot-pulse {
+  animation: dot-pulse 1.5s ease-in-out infinite;
+}
+
+/* Tree content — border-left indentation */
+.tui-tree {
+  border-left: 1px solid var(--ansi-bright-black);
+  margin-left: 1ch;
+  padding-left: 1ch;
+}
+
+/* Markdown paragraphs — compact, no trailing margin on last */
+.md-p {
+  margin: 0 0 0.3em 0;
+}
+.md-p:last-child {
+  margin-bottom: 0;
+}
+
+/* Code block styling */
+pre, code {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+pre {
+  background: var(--bg-secondary);
+  padding: 0.5em 1ch;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+code {
+  background: var(--bg-tertiary);
+  padding: 0.1em 0.4ch;
+  border-radius: var(--radius-sm);
+}
+
+pre code {
+  background: none;
+  padding: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Focus Ring & Interactive States
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Focus visible for keyboard navigation - modern ring effect */
+:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(91, 168, 208, 0.15);
+}
+
+/* Input focus state - enhanced feedback */
+input:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-blue), 0 0 0 4px rgba(91, 168, 208, 0.1);
+  transition: box-shadow var(--transition-fast);
+}
+
+/* Button hover state - subtle elevation */
+.tui-button {
+  transition: all var(--transition-fast);
+}
+
+.tui-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.tui-button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Card hover state - lift effect */
+.tui-card {
+  transition: all var(--transition-base);
+}
+
+.tui-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Input Base Style
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+input, textarea {
+  font-family: var(--font-code);
+  font-size: var(--font-size-base);
+  line-height: inherit;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+/* highlight.js syntax highlighting — uses CSS variables for theme support */
+.hljs-keyword,
+.hljs-selector-tag { color: var(--code-keyword); }
+.hljs-string,
+.hljs-doctag { color: var(--code-string); }
+.hljs-number { color: var(--code-number); }
+.hljs-comment { color: var(--code-comment); font-style: italic; }
+.hljs-function,
+.hljs-title.function_ { color: var(--code-function); }
+.hljs-built_in { color: var(--code-builtin); }
+.hljs-literal { color: var(--code-literal); }
+.hljs-type,
+.hljs-title.class_ { color: var(--code-type); }
+.hljs-regexp { color: var(--code-regexp); }
+.hljs-meta { color: var(--code-meta); }
+.hljs-tag { color: var(--code-tag); }
+.hljs-attr { color: var(--code-attr); }
+.hljs-name { color: var(--code-name); }
+.hljs-variable,
+.hljs-template-variable { color: var(--code-variable); }
+.hljs-title { color: var(--code-title); }
+.hljs-params { color: var(--code-params); }
+.hljs-addition { color: var(--code-addition); }
+.hljs-deletion { color: var(--code-deletion); }
+.hljs-property { color: var(--code-variable); }
+.hljs-operator { color: var(--text-primary); }
+.hljs-punctuation { color: var(--text-primary); }
+.hljs-section { color: var(--code-function); }
+.hljs-symbol { color: var(--code-number); }
+.hljs-link { color: var(--md-link); text-decoration: underline; }
+
+/* Scroll-to-bottom floating button */
+.scroll-down-btn:hover {
+  background: rgba(60, 60, 60, 0.95) !important;
+  border-color: #11A8CD !important;
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  html, body, #root {
+    font-size: 14px;
+  }
+}
+
+/* =============================================================================
+ * Interactive Elements - Hover States (P1 Enhancement)
+ * ============================================================================= */
+
+/* Button hover - float up effect */
+.tui-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Button active - press down effect */
+.tui-button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Card hover - subtle lift */
+.tui-card:hover {
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 0.2s ease;
+}
+
+/* Input focus - ring effect */
+.tui-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+/* Smooth transitions for all interactive elements */
+button,
+input,
+select,
+textarea,
+[role="button"] {
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* InputBox wrapper - focus-within effect */
+.input-box-wrapper {
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-box-wrapper:focus-within {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 1px var(--accent-blue);
+}
+
+/* InputBox textarea - no inner focus ring (handled by wrapper) */
+.input-box-wrapper .tui-input:focus {
+  outline: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+/* LabeledTagList - placeholder on blue background should be visible */
+.labeled-tag-label-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Modern Select Styling — Override 2010s-era inline select styles
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+select {
+  /* Remove native OS styling for consistent cross-browser look */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  /* Custom chevron arrow SVG + background.
+   * Must use background shorthand with !important because inline styles.input
+   * sets `background: 'var(--bg-secondary)'` (a shorthand), which resets all
+   * background-* sub-properties (including background-image) to initial values,
+   * effectively hiding the arrow SVG. */
+  background: var(--bg-secondary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235C6370' d='M2.5 4.5l3.5 3.5 3.5-3.5' stroke='%235C6370' stroke-width='0.5'/%3E%3C/svg%3E") no-repeat right 0.7em center / 0.85em !important;
+
+  /* Override inline border-radius (2-3px -> 6px, matching --radius-sm) */
+  border-radius: var(--radius-sm) !important;
+
+  /* Extra right padding to prevent text overlap with arrow */
+  padding-right: 2.2em !important;
+
+  /* Touch-friendly sizing */
+  cursor: pointer;
+  min-height: 2.3em;
+
+  /* Smooth interaction states */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Focus ring — matches existing input:focus pattern */
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-blue), 0 0 0 4px rgba(91, 168, 208, 0.1) !important;
+  border-color: var(--accent-blue) !important;
+}
+
+/* Hover state — subtle border highlight */
+select:hover {
+  border-color: var(--text-secondary);
+}
+
+/* Hide native arrow in IE/Edge */
+select::-ms-expand {
+  display: none;
+}
+
+/* Dropdown options styling */
+select option {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 0.4em 0.6em;
+}

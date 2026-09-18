@@ -1,0 +1,27 @@
+{
+  "name": "vesper-lite",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vesper Lite — lightweight agent runtime with waterfall canvas",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "vesper-tui": "./dist/vesper-tui.mjs",
+    "vesper-core": "./dist/vesper-core.mjs",
+    "vesper-bash": "./dist/vesper-bash.mjs",
+    "vesper-server": "./dist/vesper-server.mjs"
+  },
+  "scripts": {
+    "build": "tsc -b && node scripts/bundle.mjs",
+    "build:tsc": "tsc -b",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7",
+    "vitest": "^4.0.18"
+  }
+}

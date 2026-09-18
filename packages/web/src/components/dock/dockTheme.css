@@ -1,0 +1,384 @@
+/**
+ * rc-dock Theme for Vesper WebUI
+ * Uses CSS custom properties for theme support (dark/light)
+ *
+ * IMPORTANT: This file customizes colors and appearance only.
+ * DO NOT override critical layout properties (flex, position, width, height)
+ * as rc-dock has its own layout system.
+ */
+
+/* ===== Base Layout Colors ===== */
+.dock-layout {
+  --default-background-color: var(--bg-primary);
+  --default-border-color: var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+/* ===== Panel Styles ===== */
+.dock-panel {
+  background: var(--bg-primary) !important;
+  border: none !important;
+  border-radius: 0;
+  color: var(--text-primary) !important;
+}
+
+/* Panel content area */
+.dock-panel > .dock-content-holder {
+  background: var(--bg-primary);
+}
+
+/* ===== Tab Bar (VS Code / Modern Workspace style session tabs) ===== */
+.dock-bar {
+  background: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  height: 2.5em !important;
+  min-height: 2.5em !important;
+  padding: 0 4px !important;
+  align-items: flex-end !important;
+}
+
+/* ===== Individual Tab Styles ===== */
+.dock-tab {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  color: var(--text-muted) !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
+  transition: color 0.15s ease, background 0.15s ease;
+  font-size: 13px !important;
+  font-family: inherit;
+  font-weight: 400;
+  padding: 0 2.2em 0 1.2ch !important;
+  height: 2.2em !important;
+  margin-right: 2px !important;
+  cursor: grab;
+}
+
+.dock-tab:active {
+  cursor: grabbing;
+}
+
+.dock-tab:hover {
+  color: var(--text-primary) !important;
+  background: var(--bg-hover) !important;
+}
+
+/* Active tab */
+.dock-tab-active,
+.dock-tab-active:hover {
+  color: var(--text-primary) !important;
+  background: var(--bg-primary) !important;
+  font-weight: 500;
+  box-shadow: 0 -1px 0 0 var(--border-color), 1px 0 0 0 var(--border-color), -1px 0 0 0 var(--border-color) !important;
+}
+
+/* ===== Tab Close Button ===== */
+.dock-tab-close-btn {
+  position: absolute !important;
+  right: 0.5ch !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 2ch !important;
+  height: 1.5em !important;
+  padding: 0 !important;
+  border-radius: 2px !important;
+  color: var(--text-muted) !important;
+  opacity: 1 !important;
+  transition: color 0.2s ease, background 0.2s ease;
+  background: transparent !important;
+  cursor: pointer !important;
+  font-family: inherit !important;
+}
+
+.dock-tab-close-btn:hover {
+  color: var(--text-primary) !important;
+  background: var(--status-error) !important;
+}
+
+.dock-tab-close-btn::before {
+  content: "\00d7" !important;
+  font-size: inherit !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+}
+
+/* ===== Drag and Drop Indicators =====
+ * The dock uses rc-dock's default (center-square) drop mode, but we reshape the
+ * base direction squares into full-edge hit bands via CSS below, so a tab can
+ * be dropped anywhere near a panel edge (VS Code style). rc-dock still draws the
+ * visible feedback as `.dock-drop-indicator` — a translucent overlay covering
+ * the half of the panel the tab will dock into. */
+.dock-layout > .dock-drop-indicator {
+  background: var(--accent-blue) !important;
+  opacity: 0.22 !important;
+  border: 1.5px solid var(--accent-blue) !important;
+  border-radius: 0;
+}
+
+/* ===== Drop Square (up/down/left/right/center dock zones) =====
+ * rc-dock hardcodes white background + gray symbols (#fff / #ddd) here,
+ * which clashes with both light and dark themes. Override with theme tokens. */
+.dock-drop-layer .dock-drop-square {
+  background: var(--drop-square-bg) !important;
+  color: var(--drop-square-fg) !important;
+  border: 1px solid var(--drop-square-border) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
+}
+
+.dock-drop-layer .dock-drop-square .dock-drop-square-box {
+  border: 1px solid var(--drop-square-border) !important;
+}
+
+/* Hovered / armed drop square — filled accent block with white symbol */
+.dock-drop-layer .dock-drop-square-dropping,
+.dock-drop-layer .dock-drop-square-dropping .dock-drop-square-box {
+  background: var(--drop-square-hover-bg) !important;
+  color: var(--drop-square-hover-fg) !important;
+  border-color: var(--drop-square-hover-bg) !important;
+}
+
+/* ── Edge hit bands + preserved center cross ─────────────────────────────
+ * Each base (depth-0) direction square is stretched into a band that reaches
+ * its panel edge, so a tab can be dropped anywhere along an edge (VS Code
+ * style). The *glyph* (`.dock-drop-square::before`) is pinned back to the exact
+ * spot it occupies in rc-dock's stock layout, so the classic center cross
+ * indicator is still shown unchanged:
+ *
+ *   left   band covers [0 .. center-16]        glyph pinned to its right edge
+ *   right  band covers [center+16 .. 100%]     glyph pinned to its left edge
+ *   top    band covers [0 .. center-16] (y)    glyph pinned to its bottom edge
+ *   bottom band covers [center+16 .. 100%] (y) glyph pinned to its top edge
+ *
+ * The half-panel highlight (`.dock-drop-indicator`, above) is the primary
+ * feedback while dragging. */
+.dock-drop-layer .dock-drop-square:not(.dock-drop-deep) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.dock-drop-layer .dock-drop-square:not(.dock-drop-deep) .dock-drop-square-box {
+  display: none !important;
+}
+/* The glyph doubles as the visible 32×32 square (box + arrow). */
+.dock-drop-layer .dock-drop-square:not(.dock-drop-deep)::before {
+  width: 32px !important;
+  height: 32px !important;
+  background: var(--drop-square-bg) !important;
+  color: var(--drop-square-fg) !important;
+  border: 1px solid var(--drop-square-border) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
+}
+/* left — band [0 .. center-16px], glyph at center-48..center-16 */
+.dock-drop-layer .dock-drop-left:not(.dock-drop-deep) {
+  left: 0 !important;
+  top: 0 !important;
+  width: calc(50% - 16px) !important;
+  height: 100% !important;
+}
+.dock-drop-layer .dock-drop-left:not(.dock-drop-deep)::before {
+  left: auto !important;
+  right: 0 !important;
+  top: 50% !important;
+  margin-left: 0 !important;
+  margin-top: -16px !important;
+}
+/* right — band [center+16px .. 100%], glyph at center+16..center+48 */
+.dock-drop-layer .dock-drop-right:not(.dock-drop-deep) {
+  left: calc(50% + 16px) !important;
+  right: 0 !important;
+  top: 0 !important;
+  width: auto !important;
+  height: 100% !important;
+}
+.dock-drop-layer .dock-drop-right:not(.dock-drop-deep)::before {
+  left: 0 !important;
+  right: auto !important;
+  top: 50% !important;
+  margin-left: 0 !important;
+  margin-top: -16px !important;
+}
+/* top — band [0 .. center-16px], glyph at center-48..center-16 */
+.dock-drop-layer .dock-drop-top:not(.dock-drop-deep) {
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: calc(50% - 16px) !important;
+}
+.dock-drop-layer .dock-drop-top:not(.dock-drop-deep)::before {
+  left: 50% !important;
+  top: auto !important;
+  bottom: 0 !important;
+  margin-left: -16px !important;
+  margin-top: 0 !important;
+}
+/* bottom — band [center+16px .. 100%], glyph at center+16..center+48 */
+.dock-drop-layer .dock-drop-bottom:not(.dock-drop-deep) {
+  left: 0 !important;
+  top: calc(50% + 16px) !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: auto !important;
+}
+.dock-drop-layer .dock-drop-bottom:not(.dock-drop-deep)::before {
+  left: 50% !important;
+  top: 0 !important;
+  margin-left: -16px !important;
+  margin-top: 0 !important;
+}
+/* Armed edge: the glyph box lights up. */
+.dock-drop-layer .dock-drop-square-dropping:not(.dock-drop-deep)::before {
+  background: var(--drop-square-hover-bg) !important;
+  color: var(--drop-square-hover-fg) !important;
+  border-color: var(--drop-square-hover-bg) !important;
+}
+
+/* ===== Divider (Resize Handle) =====
+ * rc-dock renders dividers as 4px bars scaled 3x (~12px hit area) for easy
+ * grabbing. Keep that layout/hit-area, but draw only a 1px line through the
+ * middle via gradient so separators read as a single thin line. */
+.dock-divider {
+  --divider-color: var(--border-color);
+  background: transparent !important;
+}
+
+.dock-hbox > .dock-divider {
+  background: linear-gradient(
+    to right,
+    transparent calc(50% - 0.5px),
+    var(--divider-color) calc(50% - 0.5px),
+    var(--divider-color) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  ) !important;
+}
+
+.dock-vbox > .dock-divider {
+  background: linear-gradient(
+    to bottom,
+    transparent calc(50% - 0.5px),
+    var(--divider-color) calc(50% - 0.5px),
+    var(--divider-color) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  ) !important;
+}
+
+.dock-divider:hover {
+  --divider-color: var(--ansi-blue);
+}
+
+/* ===== Float Panel ===== */
+.dock-panel.dock-style-float {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-color) !important;
+  border-radius: 0;
+}
+
+.dock-panel.dock-style-float .dock-bar {
+  cursor: move;
+}
+
+/* ===== Maximized Panel ===== */
+.dock-panel.dock-style-maximized {
+  z-index: 999;
+  border-radius: 0;
+}
+
+/* ===== Tab Content Pane ===== */
+.dock-tabpane {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* ===== Override rc-dock default dark text on all inner containers ===== */
+.dock-content-holder,
+.dock-nav-more {
+  color: var(--text-primary) !important;
+}
+
+/* Fix for xterm.js in dock panel - ensure terminal fills the container */
+.dock-tabpane .xterm {
+  height: 100%;
+}
+
+/* Override xterm's hardcoded black viewport background to match terminal theme */
+.dock-tabpane .xterm-viewport {
+  background-color: var(--bg-primary) !important;
+}
+
+/* Ensure xterm screen (the actual content area) also uses theme background */
+.dock-tabpane .xterm-screen {
+  background-color: inherit;
+}
+
+/* ===== Scrollbar Styles ===== */
+.dock-nav-wrap::-webkit-scrollbar {
+  height: 4px;
+}
+
+.dock-nav-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dock-nav-wrap::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+/* ===== Ink Bar (hide — we use background color for active tab) ===== */
+.dock-ink-bar {
+  display: none !important;
+}
+
+/* ===== Dropdown Menu ===== */
+.dock-dropdown-menu {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.dock-dropdown-menu-item {
+  color: var(--text-primary) !important;
+  font-family: inherit !important;
+}
+
+.dock-dropdown-menu-item:hover {
+  background: var(--bg-hover) !important;
+}
+
+/* ===== Hide Panel Extra Buttons (maximize, float, etc.) ===== */
+.dock-panel-max-btn,
+.dock-extra-content {
+  display: none !important;
+}
+
+/* ===== Sidebar Resize Handle ===== */
+.sidebar-resize-handle {
+  background: transparent;
+  transition: background 0.15s ease;
+}
+
+.sidebar-resize-handle:hover {
+  background: linear-gradient(
+    to right,
+    transparent calc(50% - 1px),
+    var(--border-color) calc(50% - 1px),
+    var(--border-color) calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+}
+
+/* ===== Tab Context Menu ===== */
+.lux-ctx-menu-item:hover {
+  background: var(--bg-hover) !important;
+}

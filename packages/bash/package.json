@@ -1,0 +1,15 @@
+{
+  "name": "@vesper/bash",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "bin": {
+    "vesper-bash": "../../dist/vesper-bash.mjs"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run"
+  }
+}
