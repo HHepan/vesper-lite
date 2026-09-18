@@ -7,7 +7,7 @@ import * as http from 'node:http';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { WebSocketServer, WebSocket } from 'ws';
-import { runFlow, createDefaultTools, createBlock } from '@vesper/core';
+import { AgentEventLoop } from '@vesper/core';
 import type { Canvas, ProviderConfig } from '@vesper/shared';
 
 export interface LiteServerOptions {
@@ -127,21 +127,22 @@ export class LiteServer {
           // User message execution
           if (msg.cmd === 'user_input') {
             const session = this.sessions.get(activeSessionId) || this.sessions.get('default')!;
-            const toolsObj = createDefaultTools({ cwd: this.cwd });
-
-            await runFlow({
-              userInput: msg.text,
-              canvas: session.canvas,
-              providerConfig: this.providerConfig,
-              tools: toolsObj.tools,
-              executors: toolsObj.executors,
-              cwd: this.cwd,
-              onEvent: (event: any) => {
-                ws.send(JSON.stringify({ type: 'stream_event', sessionId: activeSessionId, event }));
-              }
+            
+            
+            const loop = new AgentEventLoop({
+              model: (this.providerConfig as any).model || 'gpt-4o',
+              baseURL: this.providerConfig.baseURL,
+              apiKey: this.providerConfig.apiKey,
+              maxIterations: 25,
+              maxCanvasTokens: 100000,
             });
-
-            ws.send(JSON.stringify({ type: 'flow_done', sessionId: activeSessionId, canvas: session.canvas }));
+            loop.on((event: any) => {
+              ws.send(JSON.stringify({ type: 'stream_event', sessionId: activeSessionId, event }));
+            });
+            await loop.run(msg.text);
+            ws.send(JSON.stringify({ type: 'flow_done', sessionId: activeSessionId }));
+            return;
+ws.send(JSON.stringify({ type: 'flow_done', sessionId: activeSessionId, canvas: session.canvas }));
             return;
           }
         } catch (err: any) {

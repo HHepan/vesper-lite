@@ -103,7 +103,13 @@ export OPENAI_API_KEY="your-api-key"
 ### Running Web Server & WebUI
 
 ```bash
+# Start with default port (18760)
 pnpm --filter @vesper/server start
+
+# Or specify a custom port / host
+pnpm --filter @vesper/server start -- --port 8080
+# or: node packages/server/dist/cli.js --port 8080 --host 0.0.0.0
+# or: PORT=8080 pnpm --filter @vesper/server start
 ```
 Open `http://localhost:18760` in your browser to experience the Waterfall Canvas interface with isolated multi-session workspace!
 
