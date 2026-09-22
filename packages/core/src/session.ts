@@ -146,7 +146,7 @@ export interface SessionManager {
 // ---------------------------------------------------------------------------
 
 export function createSessionManager(dbPath?: string): SessionManager {
-  const resolvedPath = dbPath ?? '.vesper/sessions.db';
+  const resolvedPath = dbPath ?? '.vesper-lite/sessions.db';
 
   // Ensure parent directory exists
   mkdirSync(dirname(resolvedPath), { recursive: true });
@@ -431,11 +431,11 @@ export function createSessionManager(dbPath?: string): SessionManager {
         state: sanitizeStateForSave(state),
       };
 
-      // Default output path: .vesper/<name>.session.json
+      // Default output path: .vesper-lite/<name>.session.json
       const safeName = sessionName.replace(/[^a-zA-Z0-9_-]/g, '_');
       const resolvedOutput = outputPath
         ? resolve(outputPath)
-        : resolve('.vesper', `${safeName}.session.json`);
+        : resolve('.vesper-lite', `${safeName}.session.json`);
 
       mkdirSync(dirname(resolvedOutput), { recursive: true });
       writeFileSync(resolvedOutput, JSON.stringify(exportData, null, 2), 'utf-8');

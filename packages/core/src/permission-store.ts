@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // Vesper Core — Permission Store
-// Persists allow/deny permission decisions to .vesper/permissions.json
+// Persists allow/deny permission decisions to .vesper-lite/permissions.json
 // so they survive across session restarts.
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -26,7 +26,7 @@ interface PermissionFile {
 // Public API
 // ---------------------------------------------------------------------------
 
-const PERMISSIONS_DIR = '.vesper';
+const PERMISSIONS_DIR = '.vesper-lite';
 const PERMISSIONS_FILE = 'permissions.json';
 
 function permissionsPath(cwd: string): string {
@@ -34,7 +34,7 @@ function permissionsPath(cwd: string): string {
 }
 
 /**
- * Load persisted permissions from `.vesper/permissions.json`.
+ * Load persisted permissions from `.vesper-lite/permissions.json`.
  * Returns an empty Map if the file is missing or malformed.
  */
 export async function loadPermissions(cwd: string): Promise<Map<string, 'allow' | 'deny'>> {
@@ -56,7 +56,7 @@ export async function loadPermissions(cwd: string): Promise<Map<string, 'allow' 
 }
 
 /**
- * Write the full permission map to `.vesper/permissions.json` (synchronous).
+ * Write the full permission map to `.vesper-lite/permissions.json` (synchronous).
  * Entries are sorted alphabetically by key for deterministic output.
  */
 export function savePermissions(cwd: string, map: Map<string, 'allow' | 'deny'>): void {

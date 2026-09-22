@@ -140,6 +140,8 @@ export class LiteServer {
         createdAt: Date.now(),
       });
       ws.send(JSON.stringify({ type: 'session_created', sessionId: id, name, success: true }));
+      // 必须立刻给当前连接发 ready 事件，否则 WebUI 的 store.ready 为 false，输入框会被 disabled 禁用
+      ws.send(JSON.stringify({ type: 'ready', sessionId: id }));
       this.broadcast({ type: 'session_list', sessions: Array.from(this.sessions.values()) });
       return;
     }
@@ -157,7 +159,10 @@ export class LiteServer {
       ws.send(JSON.stringify({
         type: 'session_state',
         sessionId: msg.sessionId,
-        state: null,
+        // Empty snapshot — the WebUI discards a null state (`if (!snapshot) return`)
+        // and would never create a tab for the pre-seeded session. An empty
+        // object loads fine (all fields default) and marks the store ready.
+        state: {},
         name: s?.name ?? msg.sessionId,
       }));
       return;
@@ -189,8 +194,8 @@ export class LiteServer {
     if (cmd === 'read_config_file') {
       const scope = msg.scope ?? 'global';
       const configPath = scope === 'project'
-        ? path.resolve(this.cwd, '.vesper', 'config.json')
-        : path.join(homedir(), '.vesper', 'config.json');
+        ? path.resolve(this.cwd, '.vesper-lite', 'config.json')
+        : path.join(homedir(), '.vesper-lite', 'config.json');
 
       try {
         const content = fs.existsSync(configPath) ? fs.readFileSync(configPath, 'utf8') : '{}';
@@ -216,16 +221,16 @@ export class LiteServer {
     if (cmd === 'write_config_file') {
       const scope = msg.scope ?? 'global';
       const configPath = scope === 'project'
-        ? path.resolve(this.cwd, '.vesper', 'config.json')
-        : path.join(homedir(), '.vesper', 'config.json');
+        ? path.resolve(this.cwd, '.vesper-lite', 'config.json')
+        : path.join(homedir(), '.vesper-lite', 'config.json');
 
       try {
         fs.mkdirSync(path.dirname(configPath), { recursive: true });
         fs.writeFileSync(configPath, msg.content, 'utf8');
-        ws.send(JSON.stringify({ type: 'config_saved', scope, success: true }));
+        ws.send(JSON.stringify({ type: 'config_file_saved', scope, success: true }));
         this.broadcast({ type: 'config_updated' });
       } catch (err: any) {
-        ws.send(JSON.stringify({ type: 'config_saved', scope, success: false, error: err.message }));
+        ws.send(JSON.stringify({ type: 'config_file_saved', scope, success: false, error: err.message }));
       }
       return;
     }
@@ -234,10 +239,28 @@ export class LiteServer {
     if (cmd === 'list_profiles') {
       try {
         const globalCfg = await loadGlobalConfig();
-        const profiles = globalCfg?.profiles ? Object.keys(globalCfg?.profiles) : [];
-        ws.send(JSON.stringify({ type: 'profiles_list', profiles }));
+        const profilesMap = globalCfg?.profiles ?? {};
+        const profileObjects = Object.entries(profilesMap).map(([name, p]: [string, any]) => ({
+          name,
+          model: p?.model,
+          baseURL: p?.baseURL,
+        }));
+        const profileNames = Object.keys(profilesMap);
+        // WebUI: SessionCreateDialog expects `profile_list` with [{name, model, baseURL}]
+        ws.send(JSON.stringify({
+          type: 'profile_list',
+          profiles: profileObjects,
+          defaultProfile: globalCfg?.defaultProfile,
+        }));
+        // WebUI: ConfigPanel expects `profiles_list` with string[]
+        ws.send(JSON.stringify({
+          type: 'profiles_list',
+          profiles: profileNames,
+          defaultProfile: globalCfg?.defaultProfile,
+        }));
       } catch {
-        ws.send(JSON.stringify({ type: 'profiles_list', profiles: [] }));
+        ws.send(JSON.stringify({ type: 'profile_list', profiles: [], defaultProfile: undefined }));
+        ws.send(JSON.stringify({ type: 'profiles_list', profiles: [], defaultProfile: undefined }));
       }
       return;
     }

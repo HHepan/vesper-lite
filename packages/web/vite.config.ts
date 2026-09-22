@@ -24,9 +24,6 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash].[ext]',
         // Split heavy dependencies into separate chunks for better caching
         manualChunks(id) {
-          if (id.includes('node_modules/@xterm') || id.includes('node_modules/xterm')) {
-            return 'xterm';
-          }
           if (id.includes('node_modules/highlight.js')) {
             return 'highlightjs';
           }

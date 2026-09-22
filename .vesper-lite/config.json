@@ -1,0 +1,17 @@
+{
+  "profiles": {
+    "dsv4f-official": {
+      "model": "deepseek-v4-flash",
+      "baseURL": "https://api.deepseek.com",
+      "apiKey": "sk-b424d86fdae043e0be7f6a1ad0d9b13a",
+      "thinking": {
+        "enabled": true,
+        "echo": true,
+        "persist": true,
+        "deepseekStylized": true
+      },
+      "supportsAudio": false,
+      "injectAsUser": false
+    }
+  }
+}

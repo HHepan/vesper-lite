@@ -17,13 +17,9 @@ import { DebugPanel } from './components/DebugPanel.js';
 
 import { TodoPanel } from './components/TodoPanel.js';
 import { FilePanel } from './components/FilePanel.js';
-import { ConnectionPanel } from './components/ConnectionPanel.js';
-import { TerminalPanel, type TerminalPanelHandle } from './components/TerminalPanel.js';
 import { Toolbar } from './components/Toolbar.js';
 import { DockLayoutWrapper } from './components/dock/DockLayoutWrapper.js';
 import { SessionTabContent } from './components/dock/SessionTabContent.js';
-// TerminalTabContent removed in lite
-import { TerminalWriteProvider, useTerminalWrite } from './contexts/TerminalWriteContext.js';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext.js';
 import { useIsMobile } from './hooks/useIsMobile.js';
 import { useNotification } from './hooks/useNotification.js';
@@ -32,10 +28,9 @@ import type { CanvasBrowserAction } from './components/CanvasBrowser.js';
 import type { SessionBrowserAction } from './components/SessionBrowser.js';
 import type { RequestAction } from './components/AgentSpinner.js';
 import { captureSessionToClipboard } from './components/ScreenshotRenderer.js';
-import { loadRelayToken } from './lib/relay-token-storage.js';
 
 // ---------------------------------------------------------------------------
-// Tab types — sessions and terminals share the same tab space
+// Tab types — sessions only (terminal support is not part of Vesper Lite)
 // ---------------------------------------------------------------------------
 
 interface SessionTab {
@@ -45,14 +40,7 @@ interface SessionTab {
   store: WebStore;
 }
 
-interface TerminalTab {
-  kind: 'terminal';
-  id: string;       // Also used as termId for the server
-  name: string;
-  ready?: boolean;  // True after server confirms term_created
-}
-
-type Tab = SessionTab | TerminalTab;
+type Tab = SessionTab;
 
 let tabCounter = 0;
 function nextTabId(prefix: string): string {
@@ -153,7 +141,6 @@ function AppInner() {
   const [showConfig, setShowConfig] = useState(false);
   const [showSessionCreate, setShowSessionCreate] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
-  const [showKnowledge, setShowKnowledge] = useState(false);
   const [showTodo, setShowTodo] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -162,9 +149,7 @@ function AppInner() {
   const [sidebarResizing, setSidebarResizing] = useState(false);
  
   const [showFiles, setShowFiles] = useState(false);
-  const [showConnection, setShowConnection] = useState(false);
   const [wireLog, setWireLog] = useState<WireLogEntry[]>([]);
-  const [remoteHostLive, setRemoteHostLive] = useState<boolean | null>(null);
   const wireLogRef = useRef<WireLogEntry[]>([]);
   const tabsRef = useRef(tabs);
   tabsRef.current = tabs;
@@ -181,17 +166,10 @@ function AppInner() {
     }
   });
 
-  // ── Session & terminal order persistence ─────────────────────────
-  // Load persisted order from localStorage
+  // ── Session order persistence ────────────────────────────────────
   const [sessionOrder, setSessionOrder] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('lux-session-order');
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  });
-  const [terminalOrder, setTerminalOrder] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('lux-terminal-order');
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
@@ -200,9 +178,6 @@ function AppInner() {
   useEffect(() => {
     try { localStorage.setItem('lux-session-order', JSON.stringify(sessionOrder)); } catch {}
   }, [sessionOrder]);
-  useEffect(() => {
-    try { localStorage.setItem('lux-terminal-order', JSON.stringify(terminalOrder)); } catch {}
-  }, [terminalOrder]);
 
   // ── Pinned tabs (VS Code-style) ──────────────────────────────────
   // Only pinned tabs stay on the top tab bar. Non-pinned tabs appear
@@ -319,12 +294,6 @@ function AppInner() {
   // Latest isMobile — needed inside async restore-settle callback.
   const isMobileRef = useRef(isMobile);
   isMobileRef.current = isMobile;
-
-  // Terminal refs — keyed by termId (used by mobile path)
-  const terminalRefs = useRef<Map<string, TerminalPanelHandle>>(new Map());
-
-  // Terminal write context (used by desktop path)
-  const terminalWrite = useTerminalWrite();
 
   // ── Session tags persistence ───────────────────────────────────────
 
@@ -607,18 +576,18 @@ function AppInner() {
           return;
 
         case 'permission_request':
-          notify('Vesper — Approval Needed', `"${event.toolName}" requires permission.`);
+          notify('Vesper Lite — Approval Needed', `"${event.toolName}" requires permission.`);
           playSound('attention');
           break; // fall through to handleEvent()
         case 'ask_user_request':
-          notify('Vesper — Question', event.questions?.[0]?.question ?? 'Agent is asking a question.');
+          notify('Vesper Lite — Question', event.questions?.[0]?.question ?? 'Agent is asking a question.');
           playSound('attention');
           break; // fall through to handleEvent()
 
         case 'session_notification':
           // Yellow dot notification from another session — only notify if tab is not active
           if (activeTabIdRef.current !== sessionId) {
-            notify('Vesper — Session Message', `Message from ${event.fromLabel ?? 'another session'}`);
+            notify('Vesper Lite — Session Message', `Message from ${event.fromLabel ?? 'another session'}`);
             playSound('attention');
           }
           break; // fall through to handleEvent()
@@ -640,7 +609,7 @@ function AppInner() {
           if (activeTabIdRef.current !== sessionId) {
             session.store.setSessionNotification();
           }
-          notify('Vesper — Task Complete', `Session "${tab.name}" is now idle.`);
+          notify('Vesper Lite — Task Complete', `Session "${tab.name}" is now idle.`);
           playSound('complete');
           return;
       }
@@ -699,82 +668,6 @@ function AppInner() {
           break;
         }
 
-        case 'remote_snapshot': {
-          // Remote relay snapshot arrived — rebuild all session tabs from remote data
-          const sessions = event.sessions ?? [];
-          const states = event.states ?? {};
-
-          // Clear existing session tabs
-          tabsRef.current = tabsRef.current.filter(t => t.kind !== 'session');
-          setTabs(tabsRef.current);
-
-          for (const s of sessions) {
-            const sid = s.id ?? s;
-            const stateData = states[sid];
-            if (!stateData?.state) continue;
-            // Don't create duplicate tabs
-            if (tabsRef.current.find(t => t.id === sid)) continue;
-            bumpTabCounter(sid);
-            if (stateData.name) {
-              const m = stateData.name.match(/^Session\s+(\d+)$/);
-              if (m) bumpSessionCounter(parseInt(m[1], 10));
-            }
-            const store = createWebStore(sid, { defaultCollapsed: isMobile });
-            wireStoreResponders(bridge, store, sid);
-            store.loadSnapshot(stateData.state);
-            const tab: SessionTab = { kind: 'session', id: sid, name: stateData.name ?? sid, store };
-            tabsRef.current = [...tabsRef.current, tab];
-          }
-
-          setTabs(tabsRef.current);
-          // remote_snapshot 是一次性定案点：直接结束恢复态，避免残留的
-          // isRestoring/pending 状态干扰后续 session_state 流的正常交互。
-          isRestoringRef.current = false;
-          pendingRestoreRef.current = null;
-          if (settleRestoreTimerRef.current) {
-            clearTimeout(settleRestoreTimerRef.current);
-            settleRestoreTimerRef.current = null;
-          }
-          if (forceSettleTimerRef.current) {
-            clearTimeout(forceSettleTimerRef.current);
-            forceSettleTimerRef.current = null;
-          }
-          setActiveTabId(resolveInitialActiveId());
-          initializedRef.current = true;
-          break;
-        }
-
-        case 'remote_result': {
-          // After relay disconnect (or switching roles), re-init local sessions
-          if (event.success && event.role === null) {
-            setRemoteHostLive(null);
-            // Clear all session tabs (they were remote)
-            tabsRef.current = tabsRef.current.filter(t => t.kind !== 'session');
-            setTabs(tabsRef.current);
-            setActiveTabId(resolveInitialActiveId());
-            // Re-init from local server
-            initializedRef.current = false;
-            isRestoringRef.current = false;
-            setRestoring(false);
-            pendingRestoreRef.current = null;
-            if (settleRestoreTimerRef.current) {
-              clearTimeout(settleRestoreTimerRef.current);
-              settleRestoreTimerRef.current = null;
-            }
-            if (forceSettleTimerRef.current) {
-              clearTimeout(forceSettleTimerRef.current);
-              forceSettleTimerRef.current = null;
-            }
-            bridge.listActiveSessions();
-          }
-          break;
-        }
-
-        case 'remote_host_status': {
-          setRemoteHostLive(event.connected ?? null);
-          break;
-        }
-
         case 'file_search_result': {
           if (event.requestId) {
             const cb = fileSearchCallbacksRef.current.get(event.requestId);
@@ -795,59 +688,6 @@ function AppInner() {
       }
     });
 
-    // Terminal events → write to the correct xterm instance
-    const unsub5 = bridge.onTerminalEvent((event) => {
-      switch (event.type) {
-        case 'term_list': {
-          // Bump tabCounter to avoid ID conflicts with existing terminals on server
-          const termIds = event.termIds ?? [];
-          for (const termId of termIds) {
-            bumpTabCounter(termId);
-          }
-          break;
-        }
-        case 'term_created': {
-          // Server confirmed terminal creation — mark tab as ready
-          if (event.success) {
-            setTabs(prev => prev.map(t => 
-              t.kind === 'terminal' && t.id === event.termId 
-                ? { ...t, ready: true } 
-                : t
-            ));
-          } else {
-            // Creation failed — remove the tab
-            console.error('Terminal creation failed:', event.error);
-            setTabs(prev => prev.filter(t => t.id !== event.termId));
-            setActiveTabId(prev => {
-              if (prev !== event.termId) return prev;
-              const remaining = tabsRef.current.filter(t => t.id !== event.termId);
-              return remaining.length > 0 ? remaining[remaining.length - 1].id : null;
-            });
-          }
-          break;
-        }
-        case 'term_output': {
-          // Try context-based write first (desktop), then ref-based (mobile)
-          const handle = terminalRefs.current.get(event.termId);
-          if (handle) {
-            handle.write(event.data);
-          } else {
-            terminalWrite.write(event.termId, event.data);
-          }
-          break;
-        }
-        case 'term_exited':
-          terminalRefs.current.delete(event.termId);
-          setTabs(prev => prev.filter(t => t.id !== event.termId));
-          setActiveTabId(prev => {
-            if (prev !== event.termId) return prev;
-            const remaining = tabsRef.current.filter(t => t.id !== event.termId);
-            return remaining.length > 0 ? remaining[remaining.length - 1].id : null;
-          });
-          break;
-      }
-    });
-
     const unsub4 = bridge.onWireLog((entry) => {
       wireLogRef.current = [...wireLogRef.current.slice(-499), entry];
       setWireLog(wireLogRef.current);
@@ -861,7 +701,6 @@ function AppInner() {
       unsub2();
       unsub3();
       unsub4();
-      unsub5();
       if (settleRestoreTimerRef.current) {
         clearTimeout(settleRestoreTimerRef.current);
         settleRestoreTimerRef.current = null;
@@ -906,31 +745,6 @@ function AppInner() {
     bridge.createSession(id, config);
   }, [bridgeState]);
 
-  // ── Terminal tab management ──────────────────────────────────────
-
-  const createTerminal = useCallback(() => {
-    const bridge = bridgeRef.current;
-    if (!bridge || bridgeState !== 'connected') return;
-
-    const id = nextTabId('t');
-    const name = `Terminal ${tabCounter}`;
-    
-    // Add tab immediately but mark as not ready (waiting for server confirmation)
-    const tab: TerminalTab = { kind: 'terminal', id, name, ready: false };
-    tabsRef.current = [...tabsRef.current, tab];
-    setTabs(tabsRef.current);
-    setActiveTabId(id);
-    setTerminalOrder(prev => [...prev, id]);
-    // Terminals are always pinned: the PTY output is push-only (no replay), so
-    // unmounting the xterm view would lose all terminal content. Keeping the
-    // tab in the bar at all times preserves the live session (VS Code behaves
-    // the same — the terminal panel is persistent).
-    setPinnedIds(prev => [...prev, id]);
-    
-    // Send create request to server
-    bridge.createTerminal(id);
-  }, [bridgeState]);
-
   // ── Close tab (either kind) ──────────────────────────────────────
 
   const closeTab = useCallback((id: string) => {
@@ -950,10 +764,6 @@ function AppInner() {
       // Clear session tag from localStorage
       handleSaveTag(id, '');
       setSessionOrder(prev => prev.filter(oid => oid !== id));
-    } else if (tab.kind === 'terminal' && bridge) {
-      bridge.destroyTerminal(id);
-      terminalRefs.current.delete(id);
-      setTerminalOrder(prev => prev.filter(oid => oid !== id));
     }
     // Remove from pinned set
     setPinnedIds(prev => prev.filter(pid => pid !== id));
@@ -978,10 +788,6 @@ function AppInner() {
   /**
    * Close a tab on the top bar (× button / context menu).
    *
-   * - Terminal: destroys the PTY entirely (VS Code semantics — closing the
-   *   terminal panel ends the session). Terminals hold a live process and a
-   *   push-only output stream, so keeping a "closed but alive" tab around
-   *   would just resurrect an empty view next time it is opened.
    * - Session: removes it from the bar only — the session stays alive and
    *   remains in the left sidebar, ready to be re-opened.
    *
@@ -993,17 +799,10 @@ function AppInner() {
    * pinnedIds.
    */
   const closeDockTab = useCallback((id: string) => {
-    const tab = tabsRef.current.find(t => t.id === id);
-    if (tab?.kind === 'terminal') {
-      // Terminal: closing the tab destroys the PTY (no confirm dialog —
-      // that is only shown for sessions in closeTab).
-      closeTab(id);
-      return;
-    }
     // Session: just remove from the bar, keep alive in the sidebar.
     setPinnedIds(prev => prev.filter(pid => pid !== id));
     recentlyClosedRef.current.set(id, Date.now());
-  }, [closeTab]);
+  }, []);
 
   // Re-settle after a dock-tab close: if the active tab is one of the just
   // closed ones (rc-dock's currentTabId is unreliable under fast consecutive
@@ -1046,32 +845,16 @@ function AppInner() {
     if (bridge) bridge.renameSession(id, name);
   }, []);
 
-  // ── Reorder sessions / terminals (drag & drop) ──────────────────
+  // ── Reorder sessions (drag & drop) ───────────────────────────────
 
   const handleReorderSessions = useCallback((fromIndex: number, toIndex: number) => {
     setTabs(prev => {
-      // Get all session and terminal tabs
       const sessions = prev.filter(t => t.kind === 'session');
-      const terminals = prev.filter(t => t.kind === 'terminal');
-      // Reorder sessions
       const [moved] = sessions.splice(fromIndex, 1);
       sessions.splice(toIndex, 0, moved);
-      // Update order tracking
       const newOrder = sessions.map(s => s.id);
       setSessionOrder(newOrder);
-      return [...sessions, ...terminals];
-    });
-  }, []);
-
-  const handleReorderTerminals = useCallback((fromIndex: number, toIndex: number) => {
-    setTabs(prev => {
-      const sessions = prev.filter(t => t.kind === 'session');
-      const terminals = prev.filter(t => t.kind === 'terminal');
-      const [moved] = terminals.splice(fromIndex, 1);
-      terminals.splice(toIndex, 0, moved);
-      const newOrder = terminals.map(t => t.id);
-      setTerminalOrder(newOrder);
-      return [...sessions, ...terminals];
+      return sessions;
     });
   }, []);
 
@@ -1422,16 +1205,6 @@ function AppInner() {
     }
   }, []);
 
-  // ── Terminal callbacks ──────────────────────────────────────────
-
-  const handleTerminalInput = useCallback((termId: string, data: string) => {
-    bridgeRef.current?.sendTerminalInput(termId, data);
-  }, []);
-
-  const handleTerminalResize = useCallback((termId: string, cols: number, rows: number) => {
-    bridgeRef.current?.resizeTerminal(termId, cols, rows);
-  }, []);
-
   // ── Global Escape key → abort active session ───────────────────
   // Works regardless of focus (textarea, scrolling area, etc.)
 
@@ -1448,23 +1221,6 @@ function AppInner() {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [activeTabId, handleAbortFor]);
 
-  // ── Warn before refresh/close if terminals are active ───────────────
-
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      const hasTerminals = tabsRef.current.some(t => t.kind === 'terminal');
-      if (hasTerminals) {
-        e.preventDefault();
-        // Modern browsers ignore custom messages, but we need to set returnValue
-        e.returnValue = 'You have active terminals. Refreshing will close them.';
-        return e.returnValue;
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
-
   // ── On connect: request session list to trigger restore/create ────
 
   useEffect(() => {
@@ -1472,18 +1228,6 @@ function AppInner() {
       const bridge = bridgeRef.current;
       if (bridge && !initializedRef.current) {
         bridge.listActiveSessions();
-        bridge.listTerminals();  // Request terminal list to bump tabCounter
-      }
-      // Always refresh relay/LAN status on reconnect so ConfigPanel stays in sync
-      if (bridge) {
-        bridge.remoteStatus();
-        bridge.lanStatus();
-        // Auto-reconnect relay client if we have a saved token
-        const stored = loadRelayToken();
-        if (stored) {
-          console.log('[lux-web] Found saved relay token, attempting auto-reconnect...');
-          bridge.remoteClient(stored.url, stored.roomId, stored.joinToken, stored.e2eSecret);
-        }
       }
     } else if (bridgeState === 'disconnected') {
       // Reset init flag on disconnect so reconnect triggers restore
@@ -1520,29 +1264,6 @@ function AppInner() {
     );
   }, [sendPromptTo, handleAbortFor, handleCanvasBrowserActionFor, handleSessionBrowserActionFor, handleRequestActionFor, handleSwitchPersonaFor, handleSwitchMemberFor, handleSwitchProviderFor, handleDisableSupervisorFor, handleUpdateSupervisorRulesFor, handleTogglePublicModeFor, handleSetPermissionModeFor, handleSetMultiChatModeFor, handleFileSearch]);
 
-  const renderTerminalContent = useCallback((tab: { kind: 'terminal'; id: string; name: string; ready?: boolean }) => {
-    // Only render the actual terminal after server confirms creation
-    if (!tab.ready) {
-      return (
-        <div style={{ 
-          width: '100%', 
-          height: '100%', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          color: '#888',
-          fontSize: '14px',
-          fontFamily: 'monospace'
-        }}>
-          Initializing terminal...
-        </div>
-      );
-    }
-    return (
-      <div className="p-4 text-zinc-500">Terminal disabled in Vesper Lite</div>
-    );
-  }, [handleTerminalInput, handleTerminalResize, closeTab]);
-
   const handleDockFocusTab = useCallback((tabId: string) => {
     setFocusedTabId(tabId);
     setActiveTabId(tabId);
@@ -1562,11 +1283,6 @@ function AppInner() {
 
   const activeTab = tabs.find(t => t.id === activeTabId);
 
-  // Stable ref for ConnectionPanel — avoids recreating { current } on every render
-  // which would cause useEffect dependency changes and infinite re-subscribe loops.
-  const connectionStoreRef = useRef<WebStore | null>(null);
-  connectionStoreRef.current = activeTab?.kind === 'session' ? activeTab.store : null;
-
   // ── Dock tabs (pinned + active preview, VS Code-style) ─────────────
   // The top tab bar only shows pinned tabs plus (if the active tab is not
   // pinned) the active tab as a single italic preview.
@@ -1579,7 +1295,6 @@ function AppInner() {
 
   const tabInfos: TabInfo[] = (() => {
     const sessions = tabs.filter(t => t.kind === 'session');
-    const terminals = tabs.filter(t => t.kind === 'terminal');
     // Sort by persisted order, falling back to reverse-chronological (newest first) for unindexed items
     const orderedSessions = [...sessions].sort((a, b) => {
       const ai = sessionOrder.indexOf(a.id);
@@ -1590,15 +1305,7 @@ function AppInner() {
       // Neither is in sessionOrder: newest sessions (larger tab id suffix or index in array) first
       return sessions.indexOf(b) - sessions.indexOf(a);
     });
-    const orderedTerminals = [...terminals].sort((a, b) => {
-      const ai = terminalOrder.indexOf(a.id);
-      const bi = terminalOrder.indexOf(b.id);
-      if (ai === -1 && bi === -1) return 0;
-      if (ai === -1) return 1;
-      if (bi === -1) return -1;
-      return ai - bi;
-    });
-    return [...orderedSessions, ...orderedTerminals].map(t => ({
+    return orderedSessions.map(t => ({
       id: t.id,
       name: t.name,
       kind: t.kind,
@@ -1685,19 +1392,6 @@ function AppInner() {
 
   return (
     <div style={styles.container}>
-      {remoteHostLive === false && (
-        <div style={{
-          background: 'rgba(240,198,116,0.15)',
-          borderBottom: '1px solid rgba(240,198,116,0.3)',
-          color: '#f0c674',
-          padding: '6px 12px',
-          fontSize: '0.85em',
-          textAlign: 'center',
-          flexShrink: 0,
-        }}>
-          ⚠ Remote host disconnected — waiting for reconnection…
-        </div>
-      )}
       {isMobile ? (
         <>
           {/* ── Mobile: TabBar + single panel (unchanged) ── */}
@@ -1709,14 +1403,11 @@ function AppInner() {
             onSaveTag={handleSaveTag}
             onSelect={setActiveTabId}
             onNewSession={openNewSessionDialog}
-            onNewTerminal={createTerminal}
             onClose={closeTab}
             onRename={renameTab}
             onConfig={() => setShowConfig(true)}
             onDebug={() => setShowDebug(true)}
-            onKnowledge={() => setShowKnowledge(true)}
             onFiles={() => setShowFiles(true)}
-            onConnection={() => setShowConnection(true)}
             onTodo={() => setShowTodo(true)}
             bridgeState={bridgeState}
           />
@@ -1741,30 +1432,13 @@ function AppInner() {
                 onSetMultiChatMode={activeTabId ? (enabled, members) => handleSetMultiChatModeFor(activeTabId, enabled, members) : undefined}
                 onFileSearch={handleFileSearch}
               />
-            ) : activeTab?.kind === 'terminal' ? (
-              activeTab.ready ? (
-                <div className="p-4 text-zinc-500">Terminal disabled in Vesper Lite</div>
-              ) : (
-                <div style={{ 
-                  width: '100%', 
-                  height: '100%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  color: '#888',
-                  fontSize: '14px',
-                  fontFamily: 'monospace'
-                }}>
-                  Initializing terminal...
-                </div>
-              )
             ) : (
               <div style={styles.empty}>
                 {bridgeState === 'connected'
-                  ? 'No active tabs. Click + for a session or >_ for a terminal.'
+                  ? 'No active tabs. Click + to create a session.'
                   : bridgeState === 'connecting'
-                  ? 'Connecting to Vesper service...'
-                  : 'Disconnected from Vesper service.'}
+                  ? 'Connecting to Vesper Lite service...'
+                  : 'Disconnected from Vesper Lite service.'}
               </div>
             )}
           </div>
@@ -1786,11 +1460,9 @@ function AppInner() {
               onSelect={setActiveTabId}
               onPinTab={pinTab}
               onNewSession={openNewSessionDialog}
-              onNewTerminal={createTerminal}
               onClose={closeTab}
               onRename={renameTab}
               onReorderSessions={handleReorderSessions}
-              onReorderTerminals={handleReorderTerminals}
               bridgeState={bridgeState}
               sessionStates={sessionStates}
               sessionTags={sessionTags}
@@ -1818,12 +1490,9 @@ function AppInner() {
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <Toolbar
-              onNewTerminal={createTerminal}
               onConfig={() => setShowConfig(true)}
               onDebug={() => setShowDebug(true)}
-              onKnowledge={() => setShowKnowledge(true)}
               onFiles={() => setShowFiles(true)}
-              onConnection={() => setShowConnection(true)}
               onTodo={() => setShowTodo(true)}
               onToggleSidebar={() => setSidebarVisible(!sidebarVisible)}
               sidebarVisible={sidebarVisible}
@@ -1840,7 +1509,7 @@ function AppInner() {
                 onFocusTab={handleDockFocusTab}
                 onPinTab={pinTab}
                 renderSessionContent={renderSessionContent}
-                renderTerminalContent={renderTerminalContent}
+                renderTerminalContent={() => <div />}
                 onScreenshotSession={handleScreenshotSession}
                 sessionStates={sessionStates}
                 isRestoring={restoring}
@@ -1850,10 +1519,10 @@ function AppInner() {
                 {bridgeState === 'connected'
                   ? tabs.length > 0
                     ? 'No pinned tabs. Click a session to preview, double-click to pin.'
-                    : 'No active tabs. Click + for a session or >_ for a terminal.'
+                    : 'No active tabs. Click + to create a session.'
                   : bridgeState === 'connecting'
-                  ? 'Connecting to Vesper service...'
-                  : 'Disconnected from Vesper service.'}
+                  ? 'Connecting to Vesper Lite service...'
+                  : 'Disconnected from Vesper Lite service.'}
               </div>
             )}
             </div>
@@ -1889,21 +1558,9 @@ function AppInner() {
         />
       )}
 
-      {showKnowledge && bridgeRef.current && (
-        <div className="p-4 text-zinc-500">Knowledge graph disabled in Vesper Lite</div>
-      )}
-
       {showFiles && (
         <FilePanel
           onClose={() => setShowFiles(false)}
-        />
-      )}
-
-      {showConnection && bridgeRef.current && (
-        <ConnectionPanel
-          bridge={bridgeRef.current}
-          storeRef={connectionStoreRef}
-          onClose={() => setShowConnection(false)}
         />
       )}
 
@@ -1920,15 +1577,13 @@ function AppInner() {
 }
 
 // ---------------------------------------------------------------------------
-// App (wraps with TerminalWriteProvider)
+// App
 // ---------------------------------------------------------------------------
 
 export function App() {
   return (
     <ThemeProvider>
-      <TerminalWriteProvider>
-        <AppInner />
-      </TerminalWriteProvider>
+      <AppInner />
     </ThemeProvider>
   );
 }

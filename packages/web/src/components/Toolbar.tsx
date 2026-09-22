@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// Vesper WebUI — Toolbar (desktop mode action strip)
+// Vesper Lite WebUI — Toolbar (desktop mode action strip)
 //
 // Sits above the DockLayout on desktop. Provides buttons for debug, settings,
 // and connection status. Same visual style as TabBar action area.
@@ -10,20 +10,17 @@ import { theme } from '../theme.js';
 import { useTheme } from '../contexts/ThemeContext.js';
 
 interface ToolbarProps {
-  onNewTerminal: () => void;
   onConfig: () => void;
   onDebug: () => void;
-  onKnowledge: () => void;
   onFiles: () => void;
-  onConnection: () => void;
   onTodo: () => void;
   onToggleSidebar: () => void;
   sidebarVisible: boolean;
   bridgeState: BridgeState;
-  activeTabKind?: 'session' | 'terminal';
+  activeTabKind?: 'session';
 }
 
-export function Toolbar({ onConfig, onDebug, onKnowledge, onFiles, onConnection, onTodo, onToggleSidebar, sidebarVisible, bridgeState, activeTabKind }: ToolbarProps) {
+export function Toolbar({ onConfig, onDebug, onFiles, onTodo, onToggleSidebar, sidebarVisible, bridgeState }: ToolbarProps) {
   const { themeName, toggleTheme } = useTheme();
   const dotColor = bridgeState === 'connected' ? theme.toolSuccess
     : bridgeState === 'connecting' ? theme.thinkingDot
@@ -58,15 +55,6 @@ export function Toolbar({ onConfig, onDebug, onKnowledge, onFiles, onConnection,
       </div>
       <div style={styles.spacer} />
       <div style={styles.actions}>
-        {activeTabKind === 'session' && (
-          <button
-            style={styles.actionBtn}
-            onClick={onKnowledge}
-            title="Knowledge graph"
-          >
-            ◇
-          </button>
-        )}
         <button
           style={styles.actionBtn}
           onClick={onDebug}
@@ -80,13 +68,6 @@ export function Toolbar({ onConfig, onDebug, onKnowledge, onFiles, onConnection,
           title="Delivered files"
         >
           📁
-        </button>
-        <button
-          style={styles.actionBtn}
-          onClick={onConnection}
-          title="Connections"
-        >
-          🔗
         </button>
         <button
           style={styles.actionBtn}

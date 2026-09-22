@@ -285,7 +285,7 @@ export function PromptManager({ bridge, config }: { bridge: Bridge; config?: Ves
     'persona':   { title: '身份/技能', keys: ['switch_persona', 'list_personas', 'current_persona', 'save_persona', 'find_personas', 'list_skills', 'load_skill', 'unload_skill', 'find_skills'] },
     'toolset':   { title: '工具集', keys: ['list_toolsets', 'switch_toolset', 'current_toolset', 'find_toolsets'] },
     'lsp':       { title: 'LSP 代码智能', keys: ['lsp_find_definition', 'lsp_find_references', 'lsp_find_implementation', 'lsp_get_diagnostics', 'lsp_get_hover', 'lsp_rename_symbol', 'lsp_rename_symbol_strict', 'lsp_find_workspace_symbols', 'lsp_prepare_call_hierarchy', 'lsp_get_incoming_calls', 'lsp_get_outgoing_calls', 'lsp_restart_server'] },
-    'session':   { title: 'Session 通信', keys: ['session_list', 'session_peek', 'session_post'] },
+    'session':   { title: 'Session 通信', keys: ['session_list'] },
     'discovery': { title: '工具发现', keys: ['search_tools'] },
     'todo':      { title: '待办', keys: ['peek_master_todo'] },
   };
@@ -459,7 +459,7 @@ export function PromptManager({ bridge, config }: { bridge: Bridge; config?: Ves
                       <button
                         style={{ ...styles.resetBtn, color: confirmReset ? '#ff6b6b' : 'var(--text-muted)', borderColor: confirmReset ? '#ff6b6b' : 'var(--text-muted)' }}
                         onClick={handleResetToDefault}
-                        title="删除 .vesper/prompts/ 中的覆盖文件，还原为内置默认版本"
+                        title="删除 .vesper-lite/prompts/ 中的覆盖文件，还原为内置默认版本"
                       >
                         {confirmReset ? '确认还原？' : '还原默认'}
                       </button>

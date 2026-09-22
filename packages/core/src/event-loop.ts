@@ -103,7 +103,7 @@ export class AgentEventLoop {
     this.state.maxIterations = config.maxIterations;
 
     // Initialize session manager
-    const sessionsDir = join(homedir(), '.vesper', 'sessions');
+    const sessionsDir = join(homedir(), '.vesper-lite', 'sessions');
     mkdirSync(sessionsDir, { recursive: true });
     this.sessionMgr = createSessionManager(join(sessionsDir, 'sessions.db'));
 

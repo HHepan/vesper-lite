@@ -26,9 +26,6 @@ export interface WireLogEntry {
 /** Listener for wire-level log entries (send/recv NDJSON). */
 export type WireLogListener = (entry: WireLogEntry) => void;
 
-/** Listener for terminal events (term_output, term_exited, etc.). */
-export type TerminalEventListener = (event: ServerEvent) => void;
-
 export interface Bridge {
   /** Current connection state. */
   readonly state: BridgeState;
@@ -63,53 +60,17 @@ export interface Bridge {
   /** Request effective config from the server. */
   getConfig(sessionId?: string): void;
 
-  /** Read config.json from the server (global=~/.vesper/ or project=.vesper/). */
+  /** Read config.json from the server (global=~/.vesper-lite/ or project=.vesper-lite/). */
   readConfigFile(scope?: 'global' | 'project', mergeGlobals?: boolean): void;
 
-  /** Write config.json on the server (global=~/.vesper/ or project=.vesper/). */
+  /** Write config.json on the server (global=~/.vesper-lite/ or project=.vesper-lite/). */
   writeConfigFile(content: string, scope?: 'global' | 'project'): void;
 
   /** Request list of profiles from config.json. */
   listProfiles(): void;
 
-  /** Connect as relay host (server generates roomId + joinToken + e2eSecret). */
-  remoteHost(relayUrl?: string): void;
-
-  /** Connect as relay client with token-based credentials. */
-  remoteClient(url: string, roomId: string, joinToken: string, e2eSecret: string): void;
-
-  /** Disconnect relay. */
-  remoteDisconnect(): void;
-
-  /** Request relay connection status. */
-  remoteStatus(): void;
-
-  /** Start embedded LAN relay on the same port. */
-  lanHost(): void;
-
-  /** Stop embedded LAN relay. */
-  lanStop(): void;
-
-  /** Request LAN relay status. */
-  lanStatus(): void;
-
   /** Send a CoreCommand to a session (sessionId is prepended by the wrapper). */
   sendCommand(sessionId: string, command: CoreCommand): void;
-
-  /** Create a PTY terminal. */
-  createTerminal(termId: string, cols?: number, rows?: number): void;
-
-  /** Send input to a terminal. */
-  sendTerminalInput(termId: string, data: string): void;
-
-  /** Resize a terminal. */
-  resizeTerminal(termId: string, cols: number, rows: number): void;
-
-  /** Destroy a terminal. */
-  destroyTerminal(termId: string): void;
-
-  /** Request list of active terminal IDs. */
-  listTerminals(): void;
 
   /** Send a global command (no session required, e.g. cookie management). */
   sendGlobalCommand(command: ServerCommand): void;
@@ -120,9 +81,6 @@ export interface Bridge {
   /** Register a listener for meta events (service_ready, install_progress, etc.). */
   onMetaEvent(listener: MetaEventListener): () => void;
 
-  /** Register a listener for terminal events. */
-  onTerminalEvent(listener: TerminalEventListener): () => void;
-
   /** Register a listener for connection state changes. */
   onStateChange(listener: (state: BridgeState) => void): () => void;
 
@@ -131,18 +89,6 @@ export interface Bridge {
 
   /** Search files/folders in a directory (for @-mention autocomplete). */
   fileSearch(query: string, requestId: string, cwd?: string, limit?: number): void;
-
-  /** Request the full ontology knowledge graph (nodes/edges/notes) for an Ego. */
-  requestOntologyGraph(egoName: string, personas: Array<{ name: string; role: string; color?: string }>, sessionId?: string): void;
-
-  // ── Ontology memory management (Knowledge panel sidebar) ──
-  ontologyUpdateNode(scopedId: string, fields: Record<string, any>, sessionId?: string): void;
-  ontologyUpdateEdge(scopedId: string, fields: Record<string, any>, sessionId?: string): void;
-  ontologyUpdateNote(scopedId: string, fields: Record<string, any>, sessionId?: string): void;
-  ontologyDelete(scopedId: string, sessionId?: string): void;
-  ontologyAdd(dbName: string, entry: Record<string, any>, sessionId?: string): void;
-  ontologyImport(egoName: string, data: string, sessionId?: string): void;
-  ontologyExport(egoName: string, sessionId?: string): void;
 
   /** Request list of prompt templates from manifest.json. */
   listPrompts(): void;
@@ -153,7 +99,7 @@ export interface Bridge {
   /** Write a prompt Markdown file. */
   writePrompt(filename: string, content: string): void;
 
-  /** Delete a .vesper/prompts/ override, reverting to the built-in default. */
+  /** Delete a .vesper-lite/prompts/ override, reverting to the built-in default. */
   deletePromptOverride(filename: string): void;
 
   /** Request a preview of merged prompts for a specific ego/role. */
@@ -162,31 +108,6 @@ export interface Bridge {
   /** Switch to a specific persona+role member. */
   switchMember(sessionId: string, personaName: string, roleName: string): void;
   setMultiChatMode(sessionId: string, enabled: boolean, members: string[]): void;
-
-  // ── Scene Management ──
-  requestSceneList(): void;
-  requestSceneLoad(name: string): void;
-  requestSceneSave(name: string, description?: string, sessionId?: string): void;
-  requestSceneCreate(name: string, description?: string): void;
-  requestSceneDelete(name: string): void;
-  requestSceneQuery(): void;
-  sendSceneCommand(sessionId: string, sceneCmd: CoreCommand): void;
-  sendSessionCommand(sessionId: string, cmd: CoreCommand): void;
-
-  // ── QQ Bot Management ──
-  qqBotStart(): void;
-  qqBotStop(): void;
-  qqBotStatus(): void;
-  qqBotUpdateConfig(config: Record<string, any>): void;
-  qqBotStickerList(): void;
-  qqBotStickerUpload(filename: string, data: string, description?: string): void;
-  qqBotStickerUpdateMeta(id: number, description: string): void;
-  qqBotStickerDelete(id: number): void;
-  qqBotStickerScan(): void;
-  qqBotStickerPreview(filename: string): void;
-  qqBotLastPrompt(): void;
-  qqBotSaveSession(): void;
-  qqBotResetSession(): void;
 
   // ── TODO Management ──
   todoList(): void;
@@ -203,7 +124,6 @@ export function createBridge(): Bridge {
 
   const sessionListeners = new Set<SessionEventListener>();
   const metaListeners = new Set<MetaEventListener>();
-  const terminalListeners = new Set<TerminalEventListener>();
   const stateListeners = new Set<(state: BridgeState) => void>();
   const wireLogListeners = new Set<WireLogListener>();
 
@@ -235,21 +155,6 @@ export function createBridge(): Bridge {
     emitWireLog('recv', data);
     try {
       const msg = JSON.parse(data) as ServerEvent;
-
-      // Terminal events (have termId, no sessionId) or term_list response
-      if ('termId' in msg || false) {
-        for (const fn of terminalListeners) fn(msg);
-        return;
-      }
-
-      // Messages with a 'type' field starting with 'qq_bot_' are meta events
-      // that may incidentally carry a sessionId (the bot's session ID),
-      // but should be routed to meta listeners, not session listeners.
-      const msgType: string | undefined = msg.type;
-      if (msgType && msgType.startsWith('qq_bot_')) {
-        for (const fn of metaListeners) fn(msg);
-        return;
-      }
 
       const sessionId = 'sessionId' in msg ? msg.sessionId : undefined;
       if (sessionId) {
@@ -367,86 +272,12 @@ export function createBridge(): Bridge {
       send({ cmd: 'list_profiles' });
     },
 
-    remoteHost(relayUrl?: string) {
-      send({ cmd: 'remote_host', ...(relayUrl ? { url: relayUrl } : {}) });
-    },
-
-    remoteClient(url: string, roomId: string, joinToken: string, e2eSecret: string) {
-      send({ cmd: 'remote_client', url, roomId, joinToken, e2eSecret });
-    },
-
-    remoteDisconnect() {
-      send({ cmd: 'remote_disconnect' });
-    },
-
-    remoteStatus() {
-      send({ cmd: 'remote_status' });
-    },
-
-    lanHost() {
-      send({ cmd: 'lan_host' });
-    },
-
-    lanStop() {
-      send({ cmd: 'lan_stop' });
-    },
-
-    lanStatus() {
-      send({ cmd: 'lan_status' });
-    },
-
     sendCommand(sessionId: string, command: CoreCommand) {
       send({ ...command, sessionId } as ServerCommand);
     },
 
-    createTerminal(termId: string, cols?: number, rows?: number) {
-      send({ cmd: 'term_create', termId, cols, rows });
-    },
-
-    sendTerminalInput(termId: string, data: string) {
-      send({ cmd: 'term_input', termId, data });
-    },
-
-    resizeTerminal(termId: string, cols: number, rows: number) {
-      send({ cmd: 'term_resize', termId, cols, rows });
-    },
-
-    destroyTerminal(termId: string) {
-      send({ cmd: 'term_destroy', termId });
-    },
-
-    listTerminals() {
-      send({ cmd: 'term_list' });
-    },
-
     fileSearch(query: string, requestId: string, cwd?: string, limit?: number) {
       send({ cmd: 'file_search', query, requestId, ...(cwd ? { cwd } : {}), ...(limit ? { limit } : {}) });
-    },
-
-    requestOntologyGraph(egoName: string, personas: Array<{ name: string; role: string; color?: string }>, sessionId?: string) {
-      send({ cmd: 'ontology_graph', egoName, personas, ...(sessionId ? { sessionId } : {}) });
-    },
-
-    ontologyUpdateNode(scopedId: string, fields: Record<string, any>, sessionId?: string) {
-      send({ cmd: 'ontology_update_node', scopedId, fields, ...(sessionId ? { sessionId } : {}) });
-    },
-    ontologyUpdateEdge(scopedId: string, fields: Record<string, any>, sessionId?: string) {
-      send({ cmd: 'ontology_update_edge', scopedId, fields, ...(sessionId ? { sessionId } : {}) });
-    },
-    ontologyUpdateNote(scopedId: string, fields: Record<string, any>, sessionId?: string) {
-      send({ cmd: 'ontology_update_note', scopedId, fields, ...(sessionId ? { sessionId } : {}) });
-    },
-    ontologyDelete(scopedId: string, sessionId?: string) {
-      send({ cmd: 'ontology_delete', scopedId, ...(sessionId ? { sessionId } : {}) });
-    },
-    ontologyAdd(dbName: string, entry: Record<string, any>, sessionId?: string) {
-      send({ cmd: 'ontology_add', dbName, entry: entry as any, ...(sessionId ? { sessionId } : {}) });
-    },
-    ontologyImport(egoName: string, data: string, sessionId?: string) {
-      send({ cmd: 'ontology_import', egoName, data, ...(sessionId ? { sessionId } : {}) });
-    },
-    ontologyExport(egoName: string, sessionId?: string) {
-      send({ cmd: 'ontology_export', egoName, ...(sessionId ? { sessionId } : {}) });
     },
 
     listPrompts() {
@@ -477,73 +308,6 @@ export function createBridge(): Bridge {
       send({ cmd: 'multi_chat_mode', sessionId, enabled, members });
     },
 
-    // ── Scene Management ──
-    requestSceneList() {
-      send({ cmd: 'scene_list', id: `scene-list-${Date.now()}` });
-    },
-    requestSceneLoad(name: string) {
-      send({ cmd: 'scene_load', id: `scene-load-${Date.now()}`, name });
-    },
-    requestSceneSave(name: string, description?: string, sessionId?: string) {
-      send({ cmd: 'scene_save', id: `scene-save-${Date.now()}`, name, description, sessionId });
-    },
-    requestSceneCreate(name: string, description?: string) {
-      send({ cmd: 'scene_create', id: `scene-create-${Date.now()}`, name, description });
-    },
-    requestSceneDelete(name: string) {
-      send({ cmd: 'scene_delete', id: `scene-delete-${Date.now()}`, name });
-    },
-    requestSceneQuery() {
-      send({ cmd: 'scene_query', id: `scene-query-${Date.now()}` });
-    },
-    sendSceneCommand(sessionId: string, sceneCmd: CoreCommand) {
-      send({ ...sceneCmd, sessionId } as ServerCommand);
-    },
-    sendSessionCommand(sessionId: string, cmd: CoreCommand) {
-      send({ ...cmd, sessionId } as ServerCommand);
-    },
-
-    // ── QQ Bot ──
-    qqBotStart() {
-      send({ cmd: 'qq_bot_start' });
-    },
-    qqBotStop() {
-      send({ cmd: 'qq_bot_stop' });
-    },
-    qqBotStatus() {
-      send({ cmd: 'qq_bot_status' });
-    },
-    qqBotUpdateConfig(config: Record<string, any>) {
-      send({ cmd: 'qq_bot_update_config', config });
-    },
-    qqBotStickerList() {
-      send({ cmd: 'qq_bot_sticker_list' });
-    },
-    qqBotStickerUpload(filename: string, data: string, description?: string) {
-      send({ cmd: 'qq_bot_sticker_upload', filename, data, description: description || '' });
-    },
-    qqBotStickerUpdateMeta(id: number, description: string) {
-      send({ cmd: 'qq_bot_sticker_update_meta', id, description });
-    },
-    qqBotStickerDelete(id: number) {
-      send({ cmd: 'qq_bot_sticker_delete', id });
-    },
-    qqBotStickerScan() {
-      send({ cmd: 'qq_bot_sticker_scan' });
-    },
-    qqBotStickerPreview(filename: string) {
-      send({ cmd: 'qq_bot_sticker_preview', filename });
-    },
-    qqBotLastPrompt() {
-      send({ cmd: 'qq_bot_last_prompt' });
-    },
-    qqBotSaveSession() {
-      send({ cmd: 'qq_bot_save_session' });
-    },
-    qqBotResetSession() {
-      send({ cmd: 'qq_bot_reset_session' });
-    },
-
     todoList() {
       send({ cmd: 'todo_list' });
     },
@@ -570,11 +334,6 @@ export function createBridge(): Bridge {
     onMetaEvent(listener: MetaEventListener) {
       metaListeners.add(listener);
       return () => { metaListeners.delete(listener); };
-    },
-
-    onTerminalEvent(listener: TerminalEventListener) {
-      terminalListeners.add(listener);
-      return () => { terminalListeners.delete(listener); };
     },
 
     onStateChange(listener: (state: BridgeState) => void) {

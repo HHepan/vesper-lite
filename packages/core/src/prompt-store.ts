@@ -214,7 +214,7 @@ async function loadFolder(folderPath: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Load overrides from .vesper/prompts/ (flat .md files, no manifest needed)
+// Load overrides from .vesper-lite/prompts/ (flat .md files, no manifest needed)
 // These override the built-in prompts loaded from dist/prompts/.
 // ---------------------------------------------------------------------------
 
@@ -242,7 +242,7 @@ function deriveOverrideKey(filename: string, subdir: string | null, raw: string)
 }
 
 async function loadDotLuxOverrides(dotLuxPromptsDir: string): Promise<void> {
-  // Load .md files from .vesper/prompts/ using frontmatter `key:` to determine
+  // Load .md files from .vesper-lite/prompts/ using frontmatter `key:` to determine
   // the override key. This matches the same convention used in dist/prompts/.
   try {
     const entries = await readdir(dotLuxPromptsDir, { withFileTypes: true });
@@ -275,7 +275,7 @@ async function loadDotLuxOverrides(dotLuxPromptsDir: string): Promise<void> {
       }
     }
   } catch {
-    // .vesper/prompts/ doesn't exist — that's fine, no overrides
+    // .vesper-lite/prompts/ doesn't exist — that's fine, no overrides
   }
 }
 
@@ -304,7 +304,7 @@ export async function loadPrompts(pathOrFolder?: string, dotLuxPromptsDir?: stri
     }
   }
 
-  // Apply .vesper/prompts/ overrides on top (highest priority)
+  // Apply .vesper-lite/prompts/ overrides on top (highest priority)
   if (dotLuxPromptsDir) {
     await loadDotLuxOverrides(dotLuxPromptsDir);
   }
@@ -315,7 +315,7 @@ export function resetPromptStore(): void {
 }
 
 /**
- * Check if a specific prompt file has a .vesper/prompts/ override.
+ * Check if a specific prompt file has a .vesper-lite/prompts/ override.
  * Returns the override path if it exists, undefined otherwise.
  */
 export function getDotLuxOverridePath(filename: string, dotLuxPromptsDir?: string): string | undefined {
@@ -325,10 +325,10 @@ export function getDotLuxOverridePath(filename: string, dotLuxPromptsDir?: strin
 }
 
 /**
- * Get the .vesper/prompts/ directory path for the current working directory.
+ * Get the .vesper-lite/prompts/ directory path for the current working directory.
  */
 export function getDotLuxPromptsDir(): string {
-  return resolve(process.cwd(), '.vesper', 'prompts');
+  return resolve(process.cwd(), '.vesper-lite', 'prompts');
 }
 
 // ---------------------------------------------------------------------------

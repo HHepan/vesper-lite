@@ -5,8 +5,8 @@
 // Default palette: VSCode Dark+ terminal ANSI colors.
 //
 // Users can override any token via:
-//   ~/.vesper/config.json    { "theme": { "bannerMascot": "#FF6B6B" } }
-//   .vesper/config.json      (project-level, higher priority)
+//   ~/.vesper-lite/config.json    { "theme": { "bannerMascot": "#FF6B6B" } }
+//   .vesper-lite/config.json      (project-level, higher priority)
 // =============================================================================
 
 import { readFileSync } from 'node:fs';
@@ -332,8 +332,8 @@ function readJsonField(filePath: string, field: string): Record<string, unknown>
 }
 
 export function loadThemeConfig(): ThemeConfig {
-  const globalTheme = readJsonField(join(homedir(), '.vesper', 'config.json'), 'theme');
-  const projectTheme = readJsonField(resolve(process.cwd(), '.vesper', 'config.json'), 'theme');
+  const globalTheme = readJsonField(join(homedir(), '.vesper-lite', 'config.json'), 'theme');
+  const projectTheme = readJsonField(resolve(process.cwd(), '.vesper-lite', 'config.json'), 'theme');
 
   return {
     ...VSCODE_DARK_PLUS,

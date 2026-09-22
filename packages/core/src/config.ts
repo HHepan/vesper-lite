@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// Vesper Lite — Global Config File (~/.vesper/config.json)
+// Vesper Lite — Global Config File (~/.vesper-lite/config.json)
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { readFile } from 'node:fs/promises';
@@ -10,7 +10,7 @@ import { stripBOM } from '@vesper/shared';
 import { resolveProxyForUrl } from './proxy-util.js';
 
 export function getConfigPath(): string {
-  return join(homedir(), '.vesper', 'config.json');
+  return join(homedir(), '.vesper-lite', 'config.json');
 }
 
 export async function loadGlobalConfig(): Promise<VesperConfig | null> {

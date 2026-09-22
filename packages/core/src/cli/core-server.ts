@@ -72,7 +72,7 @@ async function loadWorkspaceContext(cwd: string): Promise<string | undefined> {
     dir = parent;
   }
 
-  const globalDir = resolve(homedir(), '.vesper');
+  const globalDir = resolve(homedir(), '.vesper-lite');
   for (const name of candidates) {
     const filePath = resolve(globalDir, name);
     if (layers.some(l => l.path === filePath)) break;
@@ -193,7 +193,7 @@ async function main(): Promise<void> {
           const config = cmd.config as WireConfig;
 
           // Initialize session manager
-          const sessionsDir = resolve(homedir(), '.vesper', 'sessions');
+          const sessionsDir = resolve(homedir(), '.vesper-lite', 'sessions');
           mkdirSync(sessionsDir, { recursive: true });
           sessionMgr = createSessionManager(resolve(sessionsDir, 'sessions.db'));
 

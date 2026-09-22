@@ -45,19 +45,16 @@ interface TabBarProps {
   onSaveTag?: (sessionId: string, tag: string) => void;
   onSelect: (id: string) => void;
   onNewSession: () => void;
-  onNewTerminal: () => void;
   onClose: (id: string) => void;
   onRename: (id: string, name: string) => void;
   onConfig: () => void;
   onDebug: () => void;
-  onKnowledge: () => void;
   onFiles: () => void;
-  onConnection: () => void;
   onTodo: () => void;
   bridgeState: BridgeState;
 }
 
-export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, onSelect, onNewSession, onNewTerminal, onClose, onRename, onConfig, onDebug, onKnowledge, onFiles, onConnection, onTodo, bridgeState }: TabBarProps) {
+export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, onSelect, onNewSession, onClose, onRename, onConfig, onDebug, onFiles, onTodo, bridgeState }: TabBarProps) {
   const { themeName, toggleTheme } = useTheme();
   const isMobile = useIsMobile();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -129,9 +126,7 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
     : theme.toolError;
 
   const currentTab = tabs.find(t => t.id === activeId);
-  const currentLabel = currentTab
-    ? (currentTab.kind === 'terminal' ? `>_ ${currentTab.name}` : currentTab.name)
-    : 'No session';
+  const currentLabel = currentTab ? currentTab.name : 'No session';
 
   if (isMobile) {
     return (
@@ -169,12 +164,6 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
               <div style={styles.menu}>
                 <button
                   style={styles.menuItem}
-                  onClick={() => { setMenuOpen(false); onKnowledge(); }}
-                >
-                  <span style={styles.menuIcon}>◇</span> 知识图谱
-                </button>
-                <button
-                  style={styles.menuItem}
                   onClick={() => { setMenuOpen(false); onDebug(); }}
                 >
                   <span style={styles.menuIcon}>D</span> 调试日志
@@ -184,12 +173,6 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
                   onClick={() => { setMenuOpen(false); onFiles(); }}
                 >
                   <span style={styles.menuIcon}>📁</span> 文件
-                </button>
-                <button
-                  style={styles.menuItem}
-                  onClick={() => { setMenuOpen(false); onConnection(); }}
-                >
-                  <span style={styles.menuIcon}>🔗</span> 连接
                 </button>
                 <button
                   style={styles.menuItem}
@@ -280,17 +263,15 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
                 </button>
               </div>
               <div style={mobileStyles.sessionList}>
-                {/* Render sessions first (matching desktop sidebar), then terminals */}
                 {(() => {
                   const sessions = tabs.filter(t => t.kind === 'session');
-                  const terminals = tabs.filter(t => t.kind === 'terminal');
-                  return [...sessions, ...terminals].map(t => {
+                  return sessions.map(t => {
                     const isActive = t.id === activeId;
                     const sState = sessionStates?.[t.id];
-                    const isStreaming = t.kind === 'session' && sState?.status === 'streaming';
-                    const hasPending = t.kind === 'session' && (sState?.hasPending || sState?.hasNotification);
-                    const hasContent = t.kind === 'session' ? (sState?.hasContent ?? false) : false;
-                    const tag = t.kind === 'session' ? (sessionTags?.[t.id] ?? '') : '';
+                    const isStreaming = sState?.status === 'streaming';
+                    const hasPending = sState?.hasPending || sState?.hasNotification;
+                    const hasContent = sState?.hasContent ?? false;
+                    const tag = sessionTags?.[t.id] ?? '';
                     const isEditingTag = editingTagId === t.id;
                     const canEditTag = hasContent;
                     return (
@@ -304,9 +285,7 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
                       >
                         <div style={mobileStyles.sessionRow}>
                           <span style={mobileStyles.sessionIcon}>
-                            {t.kind === 'terminal' ? (
-                              '>_'
-                            ) : isStreaming ? (
+                            {isStreaming ? (
                               <span className="mobile-streaming-dots" style={mobileStyles.streamingDot} />
                             ) : hasPending ? (
                               <span style={{ ...mobileStyles.statusDot, backgroundColor: 'var(--status-warning)' }} />
@@ -316,10 +295,10 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
                           </span>
                           <span style={mobileStyles.sessionName}>
                             {t.name}
-                            {t.kind === 'session' && showSessionId && (
+                            {showSessionId && (
                               <span style={mobileStyles.sessionIdTag}>#{t.id}</span>
                             )}
-                            {t.kind === 'session' && t.personaName && showPersonaName && (
+                            {t.personaName && showPersonaName && (
                               <span style={mobileStyles.sessionPersonaTag}>（{t.personaName}）</span>
                             )}
                           </span>
@@ -332,8 +311,8 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
                             ×
                           </button>
                         </div>
-                        {/* Tag row (session only) */}
-                        {t.kind === 'session' && showSessionTag && (
+                        {/* Tag row */}
+                        {showSessionTag && (
                           <div style={mobileStyles.sessionTagRow}>
                             {isEditingTag ? (
                               <input
@@ -384,13 +363,6 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
                 >
                   + 新建会话
                 </button>
-                <button
-                  style={mobileStyles.overlayActionBtn}
-                  disabled={bridgeState !== 'connected'}
-                  onClick={() => { closeSessionList(); onNewTerminal(); }}
-                >
-                  &gt;_ 新建终端
-                </button>
               </div>
             </div>
           </>
@@ -413,7 +385,6 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
             onClick={() => onSelect(t.id)}
             onDoubleClick={() => handleDoubleClick(t.id, t.name)}
           >
-            {t.kind === 'terminal' && <span style={styles.termIcon}>&gt;_</span>}
             {editingId === t.id ? (
               <input
                 style={styles.editInput}
@@ -438,7 +409,7 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
             <button
               style={styles.closeBtn}
               onClick={(e) => { e.stopPropagation(); onClose(t.id); }}
-              title={t.kind === 'terminal' ? 'Close terminal' : 'Close session'}
+              title="Close session"
             >
               ×
             </button>
@@ -471,19 +442,6 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
               </button>
               <button
                 style={styles.menuItem}
-                disabled={bridgeState !== 'connected'}
-                onClick={() => { setMenuOpen(false); onNewTerminal(); }}
-              >
-                <span style={styles.menuIcon}>&gt;_</span> New Terminal
-              </button>
-              <button
-                style={styles.menuItem}
-                onClick={() => { setMenuOpen(false); onKnowledge(); }}
-              >
-                <span style={styles.menuIcon}>◇</span> Knowledge
-              </button>
-              <button
-                style={styles.menuItem}
                 onClick={() => { setMenuOpen(false); onDebug(); }}
               >
                 <span style={styles.menuIcon}>D</span> Debug
@@ -493,12 +451,6 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
                 onClick={() => { setMenuOpen(false); onFiles(); }}
               >
                 <span style={styles.menuIcon}>📁</span> Files
-              </button>
-              <button
-                style={styles.menuItem}
-                onClick={() => { setMenuOpen(false); onConnection(); }}
-              >
-                <span style={styles.menuIcon}>🔗</span> Connections
               </button>
               <button
                 style={styles.menuItem}

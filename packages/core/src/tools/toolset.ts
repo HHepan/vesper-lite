@@ -150,7 +150,7 @@ export function initBuiltinToolsets(): void {
 }
 
 /**
- * Load toolsets from a standalone JSON file (e.g. .vesper/toolsets.json).
+ * Load toolsets from a standalone JSON file (e.g. .vesper-lite/toolsets.json).
  * Format: Record<string, Omit<Toolset, 'name'>>
  * File not existing is silently ignored.
  */

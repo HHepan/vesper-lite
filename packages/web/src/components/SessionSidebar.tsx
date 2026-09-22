@@ -88,7 +88,7 @@ export const SessionSidebar = memo(function SessionSidebar({
 
   // Drag-and-drop state
   const [dragState, setDragState] = useState<{
-    kind: 'session' | 'terminal';
+    kind: 'session';
     dragIndex: number;
     overIndex: number | null;
     /** 'above' or 'below' the overIndex item */
@@ -132,20 +132,19 @@ export const SessionSidebar = memo(function SessionSidebar({
     : bridgeState === 'connecting' ? theme.thinkingDot
     : theme.toolError;
 
-  // Separate sessions and terminals
+  // Sessions (all tabs are sessions in Vesper Lite)
   const sessions = tabs.filter(t => t.kind === 'session');
-  const terminals = tabs.filter(t => t.kind === 'terminal');
 
-  const renderEntry = (t: TabInfo, index: number, kind: 'session' | 'terminal') => {
+  const renderEntry = (t: TabInfo, index: number, kind: 'session') => {
     const isActive = t.id === activeId;
     const sState = sessionStates?.[t.id];
-    const isStreaming = t.kind === 'session' && sState?.status === 'streaming';
-    const cronCreated = t.kind === 'session' ? (sState?.cronCreated ?? 0) : 0;
-    const cronTargeted = t.kind === 'session' ? (sState?.cronTargeted ?? 0) : 0;
+    const isStreaming = sState?.status === 'streaming';
+    const cronCreated = sState?.cronCreated ?? 0;
+    const cronTargeted = sState?.cronTargeted ?? 0;
     const hasCron = cronCreated > 0 || cronTargeted > 0;
-    const hasPending = t.kind === 'session' && (sState?.hasPending || sState?.hasNotification);
-    const hasContent = t.kind === 'session' ? (sState?.hasContent ?? false) : false;
-    const tag = t.kind === 'session' ? (sessionTags?.[t.id] ?? '') : '';
+    const hasPending = sState?.hasPending || sState?.hasNotification;
+    const hasContent = sState?.hasContent ?? false;
+    const tag = sessionTags?.[t.id] ?? '';
     const isEditingTag = editingTagId === t.id;
     const canEditTag = hasContent;
 
@@ -153,7 +152,7 @@ export const SessionSidebar = memo(function SessionSidebar({
     const isDragging = dragState?.kind === kind && dragState?.dragIndex === index;
     const showDropIndicatorAbove = dragState?.kind === kind && dragState?.overIndex === index && dragState?.position === 'above';
     const showDropIndicatorBelow = dragState?.kind === kind && dragState?.overIndex === index && dragState?.position === 'below';
-    const onReorder = kind === 'session' ? onReorderSessions : onReorderTerminals; // Only allow editing if session has content
+    const onReorder = onReorderSessions;
 
     return (
       <div
@@ -302,7 +301,7 @@ export const SessionSidebar = memo(function SessionSidebar({
             className="sidebar-close-btn"
             style={styles.closeBtn}
             onClick={(e) => { e.stopPropagation(); onClose(t.id); }}
-            title={t.kind === 'terminal' ? 'Close terminal' : 'Close session'}
+            title="Close session"
           >
             ×
           </button>
@@ -436,7 +435,6 @@ export const SessionSidebar = memo(function SessionSidebar({
         </div>
         <div style={styles.headerActions}>
           <button style={styles.headerBtn} onClick={onNewSession} disabled={bridgeState !== 'connected'} title="New session">+</button>
-          <button style={styles.headerBtn} onClick={onNewTerminal} disabled={bridgeState !== 'connected'} title="New terminal">&gt;_</button>
         </div>
       </div>
 
@@ -449,14 +447,6 @@ export const SessionSidebar = memo(function SessionSidebar({
           </div>
         )}
         {sessions.map((t, i) => renderEntry(t, i, 'session'))}
-
-        {terminals.length > 0 && (
-          <div style={{ ...styles.sectionHeader, marginTop: '0.75em' }}>
-            <span style={styles.sectionLabel}>Terminals</span>
-            <span style={styles.sectionCount}>{terminals.length}</span>
-          </div>
-        )}
-        {terminals.map((t, i) => renderEntry(t, i, 'terminal'))}
       </div>
 
       {/* ── Footer: Connection status + Close button ── */}

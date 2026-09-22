@@ -30,7 +30,6 @@ import { groupTimelineItems, type GroupedTimelineItem } from '../lib/group-tools
 import { CurrentTurn } from './CurrentTurn.js';
 import { AgentSpinner } from './AgentSpinner.js';
 import { TaskPanel } from './TaskPanel.js';
-import { SubagentPanel } from './SubagentPanel.js';
 import { InputBox } from './InputBox.js';
 import { StatusBar } from './StatusBar.js';
 import { PermissionDialog } from './PermissionDialog.js';
@@ -500,9 +499,6 @@ export function SessionPanel({ store, onSendPrompt, onAbort, onCanvasBrowserActi
 
                     {/* Task panel */}
                     <TaskPanel tasks={state.tasks} />
-
-                    {/* Subagent status panel */}
-                    <SubagentPanel subagents={state.subagents} />
 
                     {/* Agent spinner + inline request controls */}
                     <AgentSpinner

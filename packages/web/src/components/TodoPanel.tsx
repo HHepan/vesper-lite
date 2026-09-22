@@ -2,7 +2,7 @@
 // Vesper WebUI — TODO Panel (floating overlay)
 //
 // Simple TODO list: add items, edit text, toggle done, delete.
-// Data lives on the server at ~/.vesper/todo.json, synced via WebSocket.
+// Data lives on the server at ~/.vesper-lite/todo.json, synced via WebSocket.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';

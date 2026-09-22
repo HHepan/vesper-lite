@@ -30,7 +30,7 @@ import type { SessionBrowserAction } from './components/SessionBrowser.js';
 // Debug logging → lux.log file (append mode, no terminal interference)
 // ---------------------------------------------------------------------------
 
-const luxDir = join(homedir(), '.vesper');
+const luxDir = join(homedir(), '.vesper-lite');
 try { mkdirSync(luxDir, { recursive: true }); } catch {}
 const logFilePath = join(luxDir, 'lux.log');
 
@@ -160,7 +160,7 @@ Options:
   --mcp <json>            MCP server config JSON (McpServerConfig[])
   --prompts <path>        Path to prompt overrides folder or JSON file
   --core-path <path>      Path to vesper-core binary (auto-detected if omitted)
-  --profile <name>        Use a named profile from ~/.vesper/config.json
+  --profile <name>        Use a named profile from ~/.vesper-lite/config.json
   --toolset <name>        Use a named toolset (minimal/read_only/coding/full)
   --proxy <url>           HTTP(S) proxy URL
   --help, -h              Show this help
