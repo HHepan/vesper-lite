@@ -104,12 +104,12 @@ export OPENAI_API_KEY="your-api-key"
 
 ```bash
 # Start with default port (18760)
-pnpm --filter @vesper/server start
+pnpm start
 
 # Or specify a custom port / host
-pnpm --filter @vesper/server start -- --port 8080
-# or: node packages/server/dist/cli.js --port 8080 --host 0.0.0.0
-# or: PORT=8080 pnpm --filter @vesper/server start
+pnpm start -- --port 8080
+# or: node dist/vesper-server.mjs --port 8080 --host 0.0.0.0
+# or: PORT=8080 pnpm start
 ```
 Open `http://localhost:18760` in your browser to experience the Waterfall Canvas interface with isolated multi-session workspace!
 

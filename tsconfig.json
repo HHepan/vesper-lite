@@ -3,6 +3,9 @@
   "references": [
     { "path": "packages/shared" },
     { "path": "packages/bash" },
-    { "path": "packages/core" }
+    { "path": "packages/core" },
+    { "path": "packages/server" },
+    { "path": "packages/tui" },
+    { "path": "packages/web" }
   ]
 }

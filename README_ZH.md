@@ -104,12 +104,12 @@ export OPENAI_API_KEY="your-api-key"
 
 ```bash
 # 默认端口启动（18760）
-pnpm --filter @vesper/server start
+pnpm start
 
 # 自定义端口或 Host 启动
-pnpm --filter @vesper/server start -- --port 8080
-# 或：node packages/server/dist/cli.js --port 8080 --host 0.0.0.0
-# 或通过环境变量：PORT=8080 pnpm --filter @vesper/server start
+pnpm start -- --port 8080
+# 或：node dist/vesper-server.mjs --port 8080 --host 0.0.0.0
+# 或通过环境变量：PORT=8080 pnpm start
 ```
 在浏览器中打开 `http://localhost:18760` 即可体验纯净的三区瀑布流画布与多会话管理。
 

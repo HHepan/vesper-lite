@@ -15,8 +15,8 @@
     "typescript": "^5.7.0"
   },
   "scripts": {
-    "build": "tsc -b && chmod +x dist/cli.js 2>/dev/null || true",
-    "start": "node dist/cli.js"
+    "build": "tsc -b",
+    "start": "node ../../dist/vesper-server.mjs"
   },
   "bin": {
     "vesper-lite-server": "./dist/cli.js"
