@@ -490,3 +490,61 @@ export function readLines(
     onError?.(err);
   });
 }
+
+
+// ---------------------------------------------------------------------------
+
+/**
+ * Create an async iterable that reads NDJSON objects from a readable stream.
+ * Each yielded value is a parsed JSON object.
+ */
+export async function* createNdjsonReader(stream: Readable): AsyncGenerator<unknown> {
+  let buffer = '';
+
+  for await (const chunk of stream) {
+    buffer += typeof chunk === 'string' ? chunk : chunk.toString('utf-8');
+
+    let newlineIndex: number;
+    while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+      const line = buffer.substring(0, newlineIndex).trim();
+      buffer = buffer.substring(newlineIndex + 1);
+
+      if (line.length === 0) continue;
+
+      try {
+        yield JSON.parse(line);
+      } catch {
+        // Skip malformed lines
+      }
+    }
+  }
+
+  // Process any remaining data in buffer
+  const remaining = buffer.trim();
+  if (remaining.length > 0) {
+    try {
+      yield JSON.parse(remaining);
+    } catch {
+      // Skip
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// NDJSON Writer
+// ---------------------------------------------------------------------------
+
+export interface NdjsonWriter {
+  write(obj: unknown): void;
+}
+
+/**
+ * Create a writer that serializes objects as NDJSON to a writable stream.
+ */
+export function createNdjsonWriter(stream: Writable): NdjsonWriter {
+  return {
+    write(obj: unknown): void {
+      stream.write(JSON.stringify(obj) + '\n');
+    },
+  };
+}
