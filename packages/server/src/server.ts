@@ -509,6 +509,72 @@ export class LiteServer {
         });
       }
 
+      // ── Slash commands: dispatch to the appropriate AgentEventLoop method ──
+      if (cmd === 'slash') {
+        const input = promptText.trim();
+        const parts = input.split(/\s+/);
+        const name = parts[0]?.slice(1) ?? '';   // strip leading '/'
+        const arg = parts.slice(1).join(' ');
+
+        try {
+          switch (name) {
+            case 'clear':
+              session.loop.clearCanvas();
+              ws.send(JSON.stringify({ type: 'status', sessionId: sid, id: msg.id, message: 'Canvas cleared.' }));
+              break;
+            case 'save':
+              session.loop.sessionSave(arg || undefined);
+              break;
+            case 'load':
+              if (arg) session.loop.sessionLoad(arg);
+              else session.loop.sessionList();
+              break;
+            case 'delete':
+              if (arg) session.loop.sessionDelete(arg);
+              break;
+            case 'sessions':
+              session.loop.sessionList();
+              break;
+            case 'export':
+              if (arg) session.loop.sessionExport(arg);
+              else ws.send(JSON.stringify({ type: 'error', sessionId: sid, id: msg.id, error: { message: 'Usage: /export <name> [path]' } }));
+              break;
+            case 'import':
+              if (arg) session.loop.sessionImport(arg);
+              else ws.send(JSON.stringify({ type: 'error', sessionId: sid, id: msg.id, error: { message: 'Usage: /import <path>' } }));
+              break;
+            case 'pin':
+              if (arg) session.loop.pinBlock(arg);
+              break;
+            case 'canvas':
+              ws.send(JSON.stringify({ type: 'canvas_browser_snapshot', sessionId: sid, id: msg.id, snapshot: session.loop.getCanvasSnapshot() }));
+              break;
+            case 'rollback':
+              if (arg) session.loop.sessionRollback(arg);
+              break;
+            case 'task':
+              session.loop.taskQuery();
+              break;
+            case 'cd':
+              if (arg) {
+                try {
+                  process.chdir(arg);
+                  ws.send(JSON.stringify({ type: 'status', sessionId: sid, id: msg.id, message: `Changed directory to ${arg}` }));
+                } catch (e: any) {
+                  ws.send(JSON.stringify({ type: 'error', sessionId: sid, id: msg.id, error: { message: e.message } }));
+                }
+              }
+              break;
+            default:
+              ws.send(JSON.stringify({ type: 'status', sessionId: sid, id: msg.id, message: `Unknown slash command: ${input}` }));
+          }
+          ws.send(JSON.stringify({ type: 'run_complete', sessionId: sid, id: msg.id }));
+        } catch (err: any) {
+          ws.send(JSON.stringify({ type: 'error', sessionId: sid, id: msg.id, error: { message: err.message } }));
+        }
+        return;
+      }
+
       try {
         ws.send(JSON.stringify({ type: 'run_started', sessionId: sid, id: msg.id, prompt: promptText }));
         // Feed run_started into the UI state accumulator too (it carries the
