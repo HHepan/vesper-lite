@@ -14,8 +14,9 @@
     "vesper-server": "./dist/vesper-server.mjs"
   },
   "scripts": {
-    "build": "tsc -b && node scripts/bundle.mjs",
+    "build": "tsc -b && pnpm --filter @vesper/web run build:vite && node scripts/bundle.mjs",
     "build:tsc": "tsc -b",
+    "build:web": "pnpm --filter @vesper/web run build:vite",
     "start": "node dist/vesper-server.mjs",
     "test": "pnpm -r test"
   },
