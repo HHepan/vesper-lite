@@ -137,6 +137,39 @@ export class LiteServer {
     };
   }
 
+  /**
+   * 转发某个 session 的 loop 事件给所有已连接的客户端。
+   * 不绑定到创建时的单个 ws —— 否则页面刷新（新连接）后就收不到事件流。
+   */
+  private forwardSessionEvent(sid: string, event: any): void {
+    let payload: any;
+    // 如果是 Error 实例，JSON.stringify(Error) 会序列化为 {}，导致前端显示 Unknown error
+    if (event.type === 'error' && event.error instanceof Error) {
+      payload = {
+        ...event,
+        error: {
+          message: event.error.message,
+          name: event.error.name,
+          stack: event.error.stack,
+          cause: event.error.cause
+            ? (event.error.cause instanceof Error
+                ? { message: event.error.cause.message, name: event.error.cause.name, code: (event.error.cause as any).code }
+                : String(event.error.cause))
+            : undefined,
+        },
+        sessionId: sid,
+      };
+    } else {
+      payload = { ...event, sessionId: sid };
+    }
+    const json = JSON.stringify(payload);
+    for (const client of this.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(json);
+      }
+    }
+  }
+
   private async handleMessage(ws: WebSocket, msg: any) {
     const { cmd } = msg;
 
@@ -367,7 +400,7 @@ export class LiteServer {
             maxCanvasTokens: 100000,
           });
           s.loop.on((event: any) => {
-            ws.send(JSON.stringify({ ...event, sessionId: sid }));
+            this.forwardSessionEvent(sid, event);
           });
         }
         ws.send(JSON.stringify({
@@ -395,11 +428,11 @@ export class LiteServer {
       }
 
       if (!session.loop) {
-        // Read latest config
+        // Read latest merged config
         let cfg: any = {};
         try {
-          const g = await loadGlobalConfig();
-          cfg = resolveEffectiveConfig(g || {}, {}, {});
+          const merged = await this.loadMergedConfig();
+          cfg = resolveEffectiveConfig(merged || {}, {}, {});
         } catch {}
 
         session.loop = new AgentEventLoop({
@@ -411,7 +444,7 @@ export class LiteServer {
         });
 
         session.loop.on((event: any) => {
-          ws.send(JSON.stringify({ ...event, sessionId: sid }));
+          this.forwardSessionEvent(sid, event);
         });
       }
 
@@ -447,5 +480,3 @@ export class LiteServer {
     this.server.close();
   }
 }
-
-export default LiteServer;
