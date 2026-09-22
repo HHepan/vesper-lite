@@ -208,7 +208,7 @@ export class LiteServer {
         }));
         const targetProfile = msg.config?.profile || (mergedCfg as any)?.defaultProfile;
         const targetProfileCfg = targetProfile ? profilesMap[targetProfile] : undefined;
-        const effective = resolveEffectiveConfig(mergedCfg || {}, {}, {});
+        const effective = resolveEffectiveConfig({}, {}, mergedCfg || {});
         const resolvedModel = targetProfileCfg?.model || effective.model || 'gpt-4o';
         const resolvedBaseURL = targetProfileCfg?.baseURL || effective.baseURL || this.providerConfig.baseURL;
         const resolvedProviderType = targetProfileCfg?.providerType || effective.providerType || 'openai';
@@ -258,7 +258,7 @@ export class LiteServer {
         }));
         const targetProfile = (mergedCfg as any)?.defaultProfile;
         const targetProfileCfg = targetProfile ? profilesMap[targetProfile] : undefined;
-        const effective = resolveEffectiveConfig(mergedCfg || {}, {}, {});
+        const effective = resolveEffectiveConfig({}, {}, mergedCfg || {});
         const resolvedModel = targetProfileCfg?.model || effective.model || 'gpt-4o';
         const resolvedBaseURL = targetProfileCfg?.baseURL || effective.baseURL || this.providerConfig.baseURL;
         const resolvedProviderType = targetProfileCfg?.providerType || effective.providerType || 'openai';
@@ -289,7 +289,7 @@ export class LiteServer {
     if (cmd === 'get_config') {
       try {
         const globalCfg = await loadGlobalConfig();
-        const effective = resolveEffectiveConfig(globalCfg || {}, {}, {});
+        const effective = resolveEffectiveConfig({}, {}, globalCfg || {});
         ws.send(JSON.stringify({ type: 'effective_config', config: effective }));
       } catch {
         ws.send(JSON.stringify({ type: 'effective_config', config: {} }));
@@ -417,6 +417,53 @@ export class LiteServer {
       return;
     }
 
+    // ── Diagnostics: test network from inside this process ──
+    if (cmd === 'diag_fetch') {
+      try {
+        const { lookup } = await import('node:dns/promises');
+        const target = msg.url || 'api.deepseek.com';
+        // 1. DNS
+        let addrs: any = [];
+        try {
+          addrs = await lookup(target, { all: true });
+        } catch (e: any) {
+          addrs = [{ error: e.message }];
+        }
+        // 2. Fetch
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 8000);
+        const start = Date.now();
+        let fetchResult: any = {};
+        try {
+          const res = await fetch(`https://${target}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${msg.apiKey || ''}`,
+            },
+            body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'user', content: 'hi' }] }),
+            signal: controller.signal,
+          });
+          const text = await res.text().catch(() => '');
+          fetchResult = { status: res.status, timeMs: Date.now() - start, body: text.slice(0, 200) };
+        } catch (e: any) {
+          fetchResult = {
+            error: e.message,
+            name: e.name,
+            code: (e as any).code,
+            cause: e.cause ? (e.cause.message || String(e.cause)) : undefined,
+            causeCode: e.cause?.code,
+            timeMs: Date.now() - start,
+          };
+        }
+        clearTimeout(timer);
+        ws.send(JSON.stringify({ type: 'diag_result', dns: addrs, fetch: fetchResult }));
+      } catch (e: any) {
+        ws.send(JSON.stringify({ type: 'diag_result', error: e.message }));
+      }
+      return;
+    }
+
     // ── Execution commands (run, slash, etc.) ──
     if (cmd === 'run' || cmd === 'slash') {
       const sid = msg.sessionId || 's1';
@@ -432,7 +479,7 @@ export class LiteServer {
         let cfg: any = {};
         try {
           const merged = await this.loadMergedConfig();
-          cfg = resolveEffectiveConfig(merged || {}, {}, {});
+          cfg = resolveEffectiveConfig({}, {}, merged || {});
         } catch {}
 
         session.loop = new AgentEventLoop({
