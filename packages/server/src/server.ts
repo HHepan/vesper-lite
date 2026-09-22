@@ -116,6 +116,27 @@ export class LiteServer {
     }
   }
 
+  private async loadMergedConfig(): Promise<Record<string, any>> {
+    const globalCfg = await loadGlobalConfig();
+    const projectPath = path.resolve(this.cwd, '.vesper-lite', 'config.json');
+    let projectCfg: any = {};
+    try {
+      if (fs.existsSync(projectPath)) {
+        projectCfg = JSON.parse(fs.readFileSync(projectPath, 'utf8'));
+      }
+    } catch {}
+    // 合并 profiles：项目级覆盖全局
+    return {
+      ...globalCfg,
+      ...projectCfg,
+      profiles: {
+        ...(globalCfg?.profiles ?? {}),
+        ...(projectCfg?.profiles ?? {}),
+      },
+      defaultProfile: projectCfg?.defaultProfile ?? globalCfg?.defaultProfile,
+    };
+  }
+
   private async handleMessage(ws: WebSocket, msg: any) {
     const { cmd } = msg;
 
@@ -142,6 +163,33 @@ export class LiteServer {
       ws.send(JSON.stringify({ type: 'session_created', sessionId: id, name, success: true }));
       // 必须立刻给当前连接发 ready 事件，否则 WebUI 的 store.ready 为 false，输入框会被 disabled 禁用
       ws.send(JSON.stringify({ type: 'ready', sessionId: id }));
+      
+      // 给前端发送 provider 状态（让右上角的可选 provider 显示出来）
+      try {
+        const mergedCfg = await this.loadMergedConfig();
+        const profilesMap = mergedCfg?.profiles ?? {};
+        const availableProfiles = Object.entries(profilesMap).map(([name, p]: [string, any]) => ({
+          name,
+          model: p?.model,
+          baseURL: p?.baseURL,
+        }));
+        const targetProfile = msg.config?.profile || (mergedCfg as any)?.defaultProfile;
+        const targetProfileCfg = targetProfile ? profilesMap[targetProfile] : undefined;
+        const effective = resolveEffectiveConfig(mergedCfg || {}, {}, {});
+        const resolvedModel = targetProfileCfg?.model || effective.model || 'gpt-4o';
+        const resolvedBaseURL = targetProfileCfg?.baseURL || effective.baseURL || this.providerConfig.baseURL;
+        const resolvedProviderType = targetProfileCfg?.providerType || effective.providerType || 'openai';
+        ws.send(JSON.stringify({
+          type: 'provider_state',
+          sessionId: id,
+          model: resolvedModel,
+          baseURL: resolvedBaseURL,
+          providerType: resolvedProviderType,
+          currentProfile: targetProfile,
+          availableProfiles,
+        }));
+      } catch {}
+      
       this.broadcast({ type: 'session_list', sessions: Array.from(this.sessions.values()) });
       return;
     }
@@ -165,6 +213,32 @@ export class LiteServer {
         state: {},
         name: s?.name ?? msg.sessionId,
       }));
+      
+      // 恢复会话时同样下发 provider_state
+      try {
+        const mergedCfg = await this.loadMergedConfig();
+        const profilesMap = mergedCfg?.profiles ?? {};
+        const availableProfiles = Object.entries(profilesMap).map(([name, p]: [string, any]) => ({
+          name,
+          model: p?.model,
+          baseURL: p?.baseURL,
+        }));
+        const targetProfile = (mergedCfg as any)?.defaultProfile;
+        const targetProfileCfg = targetProfile ? profilesMap[targetProfile] : undefined;
+        const effective = resolveEffectiveConfig(mergedCfg || {}, {}, {});
+        const resolvedModel = targetProfileCfg?.model || effective.model || 'gpt-4o';
+        const resolvedBaseURL = targetProfileCfg?.baseURL || effective.baseURL || this.providerConfig.baseURL;
+        const resolvedProviderType = targetProfileCfg?.providerType || effective.providerType || 'openai';
+        ws.send(JSON.stringify({
+          type: 'provider_state',
+          sessionId: msg.sessionId,
+          model: resolvedModel,
+          baseURL: resolvedBaseURL,
+          providerType: resolvedProviderType,
+          currentProfile: targetProfile,
+          availableProfiles,
+        }));
+      } catch {}
       return;
     }
 
@@ -238,8 +312,8 @@ export class LiteServer {
     // ── List Profiles ──
     if (cmd === 'list_profiles') {
       try {
-        const globalCfg = await loadGlobalConfig();
-        const profilesMap = globalCfg?.profiles ?? {};
+        const mergedCfg = await this.loadMergedConfig();
+        const profilesMap = mergedCfg?.profiles ?? {};
         const profileObjects = Object.entries(profilesMap).map(([name, p]: [string, any]) => ({
           name,
           model: p?.model,
@@ -250,13 +324,13 @@ export class LiteServer {
         ws.send(JSON.stringify({
           type: 'profile_list',
           profiles: profileObjects,
-          defaultProfile: globalCfg?.defaultProfile,
+          defaultProfile: mergedCfg?.defaultProfile,
         }));
         // WebUI: ConfigPanel expects `profiles_list` with string[]
         ws.send(JSON.stringify({
           type: 'profiles_list',
           profiles: profileNames,
-          defaultProfile: globalCfg?.defaultProfile,
+          defaultProfile: mergedCfg?.defaultProfile,
         }));
       } catch {
         ws.send(JSON.stringify({ type: 'profile_list', profiles: [], defaultProfile: undefined }));
@@ -268,6 +342,45 @@ export class LiteServer {
     // ── File search (@-mention) ──
     if (cmd === 'file_search') {
       ws.send(JSON.stringify({ type: 'file_search_result', requestId: msg.requestId, results: [] }));
+      return;
+    }
+
+    // ── Provider Switch ──
+    if (cmd === 'provider_switch' || cmd === 'switch_provider') {
+      const sid = msg.sessionId;
+      const profileName = msg.profile || msg.profileName;
+      try {
+        const mergedCfg = await this.loadMergedConfig();
+        const profilesMap = mergedCfg?.profiles ?? {};
+        const p = profilesMap[profileName];
+        const s = this.sessions.get(sid);
+        if (p && s) {
+          // 重新创建 loop 以应用新 provider 配置
+          if (s.loop) {
+            try { s.loop.abort(); } catch {}
+          }
+          s.loop = new AgentEventLoop({
+            model: p.model || 'gpt-4o',
+            baseURL: p.baseURL || this.providerConfig.baseURL,
+            apiKey: p.apiKey || this.providerConfig.apiKey,
+            maxIterations: 25,
+            maxCanvasTokens: 100000,
+          });
+          s.loop.on((event: any) => {
+            ws.send(JSON.stringify({ ...event, sessionId: sid }));
+          });
+        }
+        ws.send(JSON.stringify({
+          type: 'provider_switched',
+          sessionId: sid,
+          model: p?.model,
+          baseURL: p?.baseURL,
+          providerType: p?.providerType,
+          profile: profileName,
+        }));
+      } catch (err: any) {
+        ws.send(JSON.stringify({ type: 'error', sessionId: sid, error: { message: err.message } }));
+      }
       return;
     }
 
