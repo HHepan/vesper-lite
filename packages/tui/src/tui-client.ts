@@ -287,8 +287,7 @@ export async function main(): Promise<void> {
     maxIterations: cliArgs.maxIterations ?? 0,
     maxCanvasTokens: cliArgs.maxTokens ?? 0,
     noTools: cliArgs.noTools,
-    mcp: cliArgs.mcp ?? undefined,
-    prompts: cliArgs.prompts ?? undefined,
+        prompts: cliArgs.prompts ?? undefined,
     proxy: cliArgs.proxy ?? undefined,
     profile: cliArgs.profile ?? undefined,
     toolset: cliArgs.toolset ?? undefined,
@@ -548,7 +547,7 @@ export async function main(): Promise<void> {
       }
 
       // --- Events that deserializeEvent returns null for but TUI store needs ---
-      if (wire.type === 'toolset_skill_state'
+      if ((wire as any).type === 'toolset_skill_state'
        || wire.type === 'provider_switched'
        || wire.type === 'provider_state'
        || wire.type === 'provider_request_snapshot') {

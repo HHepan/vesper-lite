@@ -20,8 +20,7 @@
       ]
     },
     "noImplicitAny": false,
-    "strictNullChecks": false,
-    "suppressImplicitAnyIndexErrors": true
+    "strictNullChecks": false
   },
   "include": [
     "src/**/*.ts",
