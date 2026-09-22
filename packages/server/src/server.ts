@@ -10,6 +10,7 @@ import { homedir } from 'node:os';
 import { WebSocketServer, WebSocket } from 'ws';
 import { AgentEventLoop, loadGlobalConfig, resolveEffectiveConfig } from '@vesper/core';
 import type { Canvas, ProviderConfig } from '@vesper/shared';
+import { SessionUIStateAccumulator } from './ui-state.js';
 
 export interface LiteServerOptions {
   port?: number;
@@ -24,6 +25,8 @@ interface SessionRecord {
   name: string;
   loop?: AgentEventLoop;
   createdAt: number;
+  /** Server-side mirror of UI state — powers snapshot restore after refresh. */
+  uiState: SessionUIStateAccumulator;
 }
 
 export class LiteServer {
@@ -52,6 +55,7 @@ export class LiteServer {
       id: 's1',
       name: 'Session 1',
       createdAt: Date.now(),
+      uiState: new SessionUIStateAccumulator(),
     });
 
     // 1. Static HTTP Server
@@ -142,6 +146,15 @@ export class LiteServer {
    * 不绑定到创建时的单个 ws —— 否则页面刷新（新连接）后就收不到事件流。
    */
   private forwardSessionEvent(sid: string, event: any): void {
+    // Feed the server-side UI state accumulator so refresh can restore canvas.
+    const session = this.sessions.get(sid);
+    if (session) {
+      session.uiState.processEvent(event);
+      if (event.type === 'run_started' && event.prompt) {
+        session.uiState.pushInputHistory(event.prompt);
+      }
+    }
+
     let payload: any;
     // 如果是 Error 实例，JSON.stringify(Error) 会序列化为 {}，导致前端显示 Unknown error
     if (event.type === 'error' && event.error instanceof Error) {
@@ -192,6 +205,7 @@ export class LiteServer {
         id,
         name,
         createdAt: Date.now(),
+        uiState: new SessionUIStateAccumulator(),
       });
       ws.send(JSON.stringify({ type: 'session_created', sessionId: id, name, success: true }));
       // 必须立刻给当前连接发 ready 事件，否则 WebUI 的 store.ready 为 false，输入框会被 disabled 禁用
@@ -240,10 +254,10 @@ export class LiteServer {
       ws.send(JSON.stringify({
         type: 'session_state',
         sessionId: msg.sessionId,
-        // Empty snapshot — the WebUI discards a null state (`if (!snapshot) return`)
-        // and would never create a tab for the pre-seeded session. An empty
-        // object loads fine (all fields default) and marks the store ready.
-        state: {},
+        // Return the accumulated UI snapshot (turns/timeline) so the WebUI
+        // restores the full canvas after a page refresh. Falls back to an
+        // empty object for a fresh session with no conversation yet.
+        state: s?.uiState ? s.uiState.getSnapshot() : {},
         name: s?.name ?? msg.sessionId,
       }));
       
@@ -470,7 +484,7 @@ export class LiteServer {
       const promptText = msg.input || msg.text || '';
       let session = this.sessions.get(sid);
       if (!session) {
-        session = { id: sid, name: 'Session', createdAt: Date.now() };
+        session = { id: sid, name: 'Session', createdAt: Date.now(), uiState: new SessionUIStateAccumulator() };
         this.sessions.set(sid, session);
       }
 
@@ -497,6 +511,10 @@ export class LiteServer {
 
       try {
         ws.send(JSON.stringify({ type: 'run_started', sessionId: sid, id: msg.id, prompt: promptText }));
+        // Feed run_started into the UI state accumulator too (it carries the
+        // prompt that the reducer needs to track the current turn).
+        session.uiState.processEvent({ type: 'run_started', prompt: promptText });
+        session.uiState.pushInputHistory(promptText);
         await session.loop.run(promptText);
         ws.send(JSON.stringify({ type: 'run_complete', sessionId: sid, id: msg.id }));
       } catch (err: any) {
@@ -527,3 +545,5 @@ export class LiteServer {
     this.server.close();
   }
 }
+
+export default LiteServer;
