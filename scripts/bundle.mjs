@@ -88,10 +88,22 @@ for (const entry of entries) {
   console.log(`✓ ${entry.outfile.replace(root, '.')}`);
 }
 
-// Copy WebUI production build into dist/web for server static delivery
-const webDist = resolve(root, 'packages/web/dist');
+// ---------------------------------------------------------------------------
+// Build WebUI SPA via Vite and copy into dist/web
+// ---------------------------------------------------------------------------
+import { execSync } from 'node:child_process';
+
+const webDir = resolve(root, 'packages/web');
+const webDist = resolve(webDir, 'dist');
 const targetWeb = resolve(root, 'dist/web');
-if (existsSync(webDist)) {
-  cpSync(webDist, targetWeb, { recursive: true });
-  console.log('✓ Copied packages/web/dist to dist/web');
+
+console.log('Building WebUI SPA...');
+try {
+  execSync('npx vite build', { cwd: webDir, stdio: 'inherit' });
+  if (existsSync(webDist)) {
+    cpSync(webDist, targetWeb, { recursive: true });
+    console.log('✓ Copied packages/web/dist to dist/web');
+  }
+} catch (err) {
+  console.warn('⚠ Failed to build web package automatically:', err.message);
 }
