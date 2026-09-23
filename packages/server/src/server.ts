@@ -410,8 +410,8 @@ export class LiteServer {
             model: p.model || 'gpt-4o',
             baseURL: p.baseURL || this.providerConfig.baseURL,
             apiKey: p.apiKey || this.providerConfig.apiKey,
-            maxIterations: 25,
-            maxCanvasTokens: 100000,
+            maxIterations: (mergedCfg.maxIterations && mergedCfg.maxIterations > 0) ? mergedCfg.maxIterations : 25,
+            maxCanvasTokens: (mergedCfg.maxTokens && mergedCfg.maxTokens > 0) ? mergedCfg.maxTokens : 100000,
           });
           s.loop.on((event: any) => {
             this.forwardSessionEvent(sid, event);
