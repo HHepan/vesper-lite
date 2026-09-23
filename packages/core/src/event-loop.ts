@@ -1,3 +1,4 @@
+import { persistImages, generateSessionSlug } from './image-store.js';
 // ═══════════════════════════════════════════════════════════════════════════
 // Vesper Lite — Agent Event Loop
 // Orchestrates user input → runFlow → canvas updates
@@ -154,9 +155,20 @@ export class AgentEventLoop {
         };
       }
 
+      // Persist images to disk if provided
+      let persistedImagePaths: string[] | undefined;
+      if (images?.length) {
+        try {
+          const sessionSlug = generateSessionSlug();
+          persistedImagePaths = await persistImages(images, sessionSlug);
+        } catch (err) {
+          console.warn('[event-loop] Failed to persist images:', err);
+        }
+      }
+
       // Append user message to canvas
       const userBlock = createBlock('user_message', input, {
-        imageRefs: images?.length ? images.map((_: any, i: number) => `img-${i}`) : undefined,
+        imageRefs: persistedImagePaths?.length ? persistedImagePaths : (images?.length ? images.map((_: any, i: number) => `img-${i}`) : undefined),
       });
       this.state = {
         ...this.state,

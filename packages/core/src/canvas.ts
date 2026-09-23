@@ -1,3 +1,4 @@
+import { loadImageAsDataUri } from './image-store.js';
 // ═══════════════════════════════════════════════════════════════════════════
 // Vesper Core — Canvas (CanvasBlock architecture + Drift compression)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1243,7 +1244,7 @@ export function serializeCanvasForHistoryView(
  */
 export interface RebuiltHistoryMessage {
   role: 'user' | 'assistant' | 'tool';
-  content: string | null;
+  content: string | null | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string; detail?: 'auto' | 'low' | 'high' } }>;
   tool_calls?: Array<{
     id: string;
     type: 'function';
@@ -1383,6 +1384,29 @@ export function rebuildHistoryMessages(canvas: Canvas): RebuiltHistoryMessage[] 
 
     switch (block.type) {
       case 'user_message': {
+        if (block.imageRefs?.length) {
+          const imageParts: Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string; detail?: 'auto' | 'low' | 'high' } }> = [];
+          for (const ref of block.imageRefs) {
+            const dataUri = loadImageAsDataUri(ref);
+            if (dataUri) {
+              imageParts.push({
+                type: 'image_url',
+                image_url: { url: dataUri, detail: 'auto' },
+              });
+            }
+          }
+          if (imageParts.length > 0) {
+            messages.push({
+              role: 'user',
+              content: [
+                { type: 'text', text: block.content },
+                ...imageParts,
+              ],
+            });
+            consumedBlockIds.add(block.id);
+            break;
+          }
+        }
         messages.push({
           role: 'user',
           content: block.content,

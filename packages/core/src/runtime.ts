@@ -1,3 +1,4 @@
+import { loadImageAsDataUri } from './image-store.js';
 // ═══════════════════════════════════════════════════════════════════════════
 // Vesper Lite — Agent Flow Runtime
 // Core single-turn flow engine with Waterfall Canvas & Tool Loop
@@ -68,10 +69,33 @@ export async function* runFlow(
 
   // ── Build API messages from canvas ──
   const historyMessages = rebuildHistoryMessages(state.canvas);
+
+  // If the last block is a user_message with imageRefs, load them for the API message
+  let currentUserContent: string | import('./provider.js').ContentPart[] = state.userMessage;
+  const lastBlock = state.canvas.blocks[state.canvas.blocks.length - 1];
+  if (lastBlock && lastBlock.type === 'user_message' && lastBlock.imageRefs?.length && config.supportsVision !== false) {
+    const imageParts: import('./provider.js').ContentPart[] = [];
+    for (const ref of lastBlock.imageRefs) {
+      const dataUri = loadImageAsDataUri(ref);
+      if (dataUri) {
+        imageParts.push({
+          type: 'image_url',
+          image_url: { url: dataUri, detail: 'auto' },
+        });
+      }
+    }
+    if (imageParts.length > 0) {
+      currentUserContent = [
+        { type: 'text', text: state.userMessage },
+        ...imageParts,
+      ];
+    }
+  }
+
   const messages: ChatMessage[] = [
     { role: 'system', content: systemPrompt, _sections: systemPromptSections },
     ...historyMessages,
-    { role: 'user', content: state.userMessage },
+    { role: 'user', content: currentUserContent },
   ];
 
   // ── Prepare tool definitions ──

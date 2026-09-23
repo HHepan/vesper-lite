@@ -595,12 +595,14 @@ export class LiteServer {
       }
 
       try {
-        ws.send(JSON.stringify({ type: 'run_started', sessionId: sid, id: msg.id, prompt: promptText }));
+        const images = msg.images;
+        const regenerate = msg.regenerate;
+        ws.send(JSON.stringify({ type: 'run_started', sessionId: sid, id: msg.id, prompt: promptText, ...(images?.length ? { images } : {}) }));
         // Feed run_started into the UI state accumulator too (it carries the
         // prompt that the reducer needs to track the current turn).
-        session.uiState.processEvent({ type: 'run_started', prompt: promptText });
+        session.uiState.processEvent({ type: 'run_started', prompt: promptText, ...(images?.length ? { images } : {}) });
         session.uiState.pushInputHistory(promptText);
-        await session.loop.run(promptText);
+        await session.loop.run(promptText, images, regenerate);
         ws.send(JSON.stringify({ type: 'run_complete', sessionId: sid, id: msg.id }));
       } catch (err: any) {
         ws.send(JSON.stringify({ type: 'error', sessionId: sid, id: msg.id, error: { message: err.message } }));

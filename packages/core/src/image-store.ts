@@ -9,7 +9,7 @@
 // across the entire conversation, not just the first API call.
 //
 // Storage layout:
-//   .vesper-lite/images/{sessionSlug}/{uuid}.png
+//   .vesper/images/{sessionSlug}/{uuid}.png
 //
 // sessionSlug is a short identifier per runFlow invocation (timestamp + short
 // random suffix) so images are grouped by conversation session.
@@ -56,7 +56,7 @@ export function generateSessionSlug(): string {
 
 /**
  * Resolve the image storage directory for a given session.
- * Uses `cwd/.vesper-lite/images/{sessionSlug}/` — project-local, session-scoped.
+ * Uses `cwd/.vesper/images/{sessionSlug}/` — project-local, session-scoped.
  */
 function resolveImageDir(sessionSlug: string, cwd?: string): string {
   const base = cwd ?? process.cwd();

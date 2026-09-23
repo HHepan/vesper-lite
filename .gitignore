@@ -7,3 +7,5 @@ dist/
 *.7z
 *.exe
 nohup.out
+
+.vesper-lite/images/
