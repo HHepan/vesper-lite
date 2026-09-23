@@ -146,7 +146,6 @@ export async function* runFlow(
           accumulator.feed(chunk);
           break;
         case 'tool_calls_done':
-          hasToolCalls = true;
           break;
         case 'finish':
           break;
@@ -164,7 +163,10 @@ export async function* runFlow(
     diagnostics.recordResponseTokens(countTokens(turnText));
 
     const pendingCalls = accumulator.flush();
-    if (!hasToolCalls || pendingCalls.length === 0) {
+    // Execute accumulated tool calls whenever the accumulator produced any.
+    // (Don't gate on the `tool_calls_done` stream flag — some providers omit
+    // the explicit finish reason on tool-call turns.)
+    if (pendingCalls.length === 0) {
       break;
     }
 
@@ -313,3 +315,4 @@ function matchGlob(str: string, pattern: string): boolean {
   }
   return str === pattern;
 }
+

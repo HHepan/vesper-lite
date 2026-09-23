@@ -231,6 +231,12 @@ function extractDeltas(parsed: Record<string, any>): ProviderStreamMessage[] {
   const finishReason = choice.finish_reason;
   if (finishReason) {
     messages.push({ type: 'finish', reason: finishReason });
+    // Signal that the model finished a tool-call turn so the runtime can
+    // proceed to execute the accumulated tool calls. Without this the
+    // runtime's `hasToolCalls` flag stays false and the calls are dropped.
+    if (finishReason === 'tool_calls') {
+      messages.push({ type: 'tool_calls_done' });
+    }
   }
 
   return messages;

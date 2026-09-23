@@ -455,6 +455,12 @@ export class AgentEventLoop {
       registry.register(tool.definition.name, tool.executor);
     }
 
+    // Populate state.toolDefinitions so the API request carries the `tools`
+    // parameter. Without this the model sees tool descriptions in the system
+    // prompt but no structured tool schema, and degenerates to emitting DSML
+    // text (e.g. `<||DSML|| invoke name="bash">`) instead of real tool_calls.
+    this.state = { ...this.state, toolDefinitions: tools.map(t => t.definition) };
+
     return registry;
   }
 
