@@ -90,13 +90,6 @@ function wireStoreResponders(bridge: Bridge, store: WebStore, sessionId: string)
       answers,
     });
   });
-  store.setDatasetOverwriteResponder((requestId, decision) => {
-    bridge.sendCommand(sessionId, {
-      id: `ds-ow-${Date.now()}`,
-      requestId,
-      decision,
-    });
-  });
 }
 
 // ---------------------------------------------------------------------------
