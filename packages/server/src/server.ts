@@ -210,23 +210,8 @@ export class LiteServer {
       ws.send(JSON.stringify({ type: 'session_created', sessionId: id, name, success: true }));
       // 必须立刻给当前连接发 ready 事件，否则 WebUI 的 store.ready 为 false，输入框会被 disabled 禁用
       ws.send(JSON.stringify({ type: 'ready', sessionId: id }));
-      ws.send(JSON.stringify({
-        type: 'token_budget',
-        sessionId: id,
-        snapshot: {
-          pinnedTokens: 0,
-          foldedTokens: 0,
-          activeTokens: 0,
-          reminderTokens: 0,
-          totalTokens: 0,
-          budgetTokens: 100000,
-          utilizationPercent: 0,
-          source: 'estimated',
-          cumulativeTokens: 0,
-        },
-      }));
-      
-      // 给前端发送 provider 状态（让右上角的可选 provider 显示出来）
+
+      // 给前端发送 provider 状态与初始 token 预算
       try {
         const mergedCfg = await this.loadMergedConfig();
         const profilesMap = mergedCfg?.profiles ?? {};
@@ -241,6 +226,24 @@ export class LiteServer {
         const resolvedModel = targetProfileCfg?.model || effective.model || 'gpt-4o';
         const resolvedBaseURL = targetProfileCfg?.baseURL || effective.baseURL || this.providerConfig.baseURL;
         const resolvedProviderType = targetProfileCfg?.providerType || effective.providerType || 'openai';
+        const budgetTokens = targetProfileCfg?.maxCanvasTokens || effective.maxTokens || 200000;
+
+        ws.send(JSON.stringify({
+          type: 'token_budget',
+          sessionId: id,
+          snapshot: {
+            pinnedTokens: 0,
+            foldedTokens: 0,
+            activeTokens: 0,
+            reminderTokens: 0,
+            totalTokens: 0,
+            budgetTokens,
+            utilizationPercent: 0,
+            source: 'estimated',
+            cumulativeTokens: 0,
+          },
+        }));
+
         ws.send(JSON.stringify({
           type: 'provider_state',
           sessionId: id,
@@ -421,12 +424,13 @@ export class LiteServer {
           if (s.loop) {
             try { s.loop.abort(); } catch {}
           }
+          const effective = resolveEffectiveConfig({}, {}, mergedCfg || {});
           s.loop = new AgentEventLoop({
-            model: p.model || 'gpt-4o',
-            baseURL: p.baseURL || this.providerConfig.baseURL,
-            apiKey: p.apiKey || this.providerConfig.apiKey,
+            model: p.model || effective.model || 'gpt-4o',
+            baseURL: p.baseURL || effective.baseURL || this.providerConfig.baseURL,
+            apiKey: p.apiKey || effective.apiKey || this.providerConfig.apiKey,
             maxIterations: (mergedCfg.maxIterations && mergedCfg.maxIterations > 0) ? mergedCfg.maxIterations : 25,
-            maxCanvasTokens: (mergedCfg.maxTokens && mergedCfg.maxTokens > 0) ? mergedCfg.maxTokens : 100000,
+            maxCanvasTokens: p.maxCanvasTokens || effective.maxTokens || 200000,
           });
           s.loop.on((event: any) => {
             this.forwardSessionEvent(sid, event);
@@ -515,8 +519,8 @@ export class LiteServer {
           model: cfg.model || (this.providerConfig as any).model || 'gpt-4o',
           baseURL: cfg.baseURL || this.providerConfig.baseURL,
           apiKey: cfg.apiKey || this.providerConfig.apiKey,
-          maxIterations: 25,
-          maxCanvasTokens: 100000,
+          maxIterations: (cfg.maxIterations && cfg.maxIterations > 0) ? cfg.maxIterations : 25,
+          maxCanvasTokens: cfg.maxTokens || 200000,
         });
 
         session.loop.on((event: any) => {
