@@ -49,11 +49,10 @@ interface TabBarProps {
   onRename: (id: string, name: string) => void;
   onConfig: () => void;
   onDebug: () => void;
-  onTodo: () => void;
   bridgeState: BridgeState;
 }
 
-export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, onSelect, onNewSession, onClose, onRename, onConfig, onDebug, onTodo, bridgeState }: TabBarProps) {
+export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, onSelect, onNewSession, onClose, onRename, onConfig, onDebug, bridgeState }: TabBarProps) {
   const { themeName, toggleTheme } = useTheme();
   const isMobile = useIsMobile();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -172,12 +171,6 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
                   onClick={() => { setMenuOpen(false); onConfig(); }}
                 >
                   <span style={styles.menuIcon}>⚙</span> 设置
-                </button>
-                <button
-                  style={styles.menuItem}
-                  onClick={() => { setMenuOpen(false); onTodo(); }}
-                >
-                  <span style={styles.menuIcon}>📝</span> 待办
                 </button>
                 <button
                   style={styles.menuItem}
@@ -444,12 +437,6 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
                 onClick={() => { setMenuOpen(false); onConfig(); }}
               >
                 <span style={styles.menuIcon}>⚙</span> Settings
-              </button>
-              <button
-                style={styles.menuItem}
-                onClick={() => { setMenuOpen(false); onTodo(); }}
-              >
-                <span style={styles.menuIcon}>📝</span> TODO
               </button>
               <button
                 style={styles.menuItem}

@@ -131,7 +131,6 @@ function AppInner() {
   const [showConfig, setShowConfig] = useState(false);
   const [showSessionCreate, setShowSessionCreate] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
-  const [showTodo, setShowTodo] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     try { const s = localStorage.getItem('lux-sidebar-width'); return s ? Math.max(230, Math.min(600, parseInt(s, 10))) : 230; } catch { return 230; }
@@ -1374,7 +1373,6 @@ function AppInner() {
             onRename={renameTab}
             onConfig={() => setShowConfig(true)}
             onDebug={() => setShowDebug(true)}
-            onTodo={() => setShowTodo(true)}
             bridgeState={bridgeState}
           />
 
@@ -1456,7 +1454,6 @@ function AppInner() {
             <Toolbar
               onConfig={() => setShowConfig(true)}
               onDebug={() => setShowDebug(true)}
-              onTodo={() => setShowTodo(true)}
               onToggleSidebar={() => setSidebarVisible(!sidebarVisible)}
               sidebarVisible={sidebarVisible}
               bridgeState={bridgeState}

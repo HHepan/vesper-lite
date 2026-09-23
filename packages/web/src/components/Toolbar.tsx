@@ -12,14 +12,13 @@ import { useTheme } from '../contexts/ThemeContext.js';
 interface ToolbarProps {
   onConfig: () => void;
   onDebug: () => void;
-  onTodo: () => void;
   onToggleSidebar: () => void;
   sidebarVisible: boolean;
   bridgeState: BridgeState;
   activeTabKind?: 'session';
 }
 
-export function Toolbar({ onConfig, onDebug, onTodo, onToggleSidebar, sidebarVisible, bridgeState }: ToolbarProps) {
+export function Toolbar({ onConfig, onDebug, onToggleSidebar, sidebarVisible, bridgeState }: ToolbarProps) {
   const { themeName, toggleTheme } = useTheme();
   const dotColor = bridgeState === 'connected' ? theme.toolSuccess
     : bridgeState === 'connecting' ? theme.thinkingDot
@@ -37,13 +36,6 @@ export function Toolbar({ onConfig, onDebug, onTodo, onToggleSidebar, sidebarVis
             ▶
           </button>
         )}
-        <button
-          style={styles.actionBtn}
-          onClick={onTodo}
-          title="TODO"
-        >
-          📝
-        </button>
         <button
           style={styles.actionBtn}
           onClick={toggleTheme}
