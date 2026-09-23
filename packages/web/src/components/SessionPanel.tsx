@@ -34,7 +34,6 @@ import { InputBox } from './InputBox.js';
 import { StatusBar } from './StatusBar.js';
 import { PermissionDialog } from './PermissionDialog.js';
 import { AskUserDialog } from './AskUserDialog.js';
-import { DatasetOverwriteDialog } from './DatasetOverwriteDialog.js';
 import { CanvasBrowser, type CanvasBrowserAction } from './CanvasBrowser.js';
 import { SessionBrowser, type SessionBrowserAction } from './SessionBrowser.js';
 import type { RequestAction } from './AgentSpinner.js';
@@ -369,11 +368,7 @@ export function SessionPanel({ store, onSendPrompt, onAbort, onCanvasBrowserActi
     store.respondAskUser(answers);
   }, [store]);
 
-  const handleDatasetOverwriteRespond = useCallback((decision: 'overwrite' | 'cancel') => {
-    store.respondDatasetOverwrite(decision);
-  }, [store]);
-
-  const inputDisabled = !state.ready || state.pendingPermission !== null || state.pendingAskUser !== null || state.canvasBrowser !== null || state.sessionBrowser !== null || state.datasetOverwriteDialog !== null;
+  const inputDisabled = !state.ready || state.pendingPermission !== null || state.pendingAskUser !== null || state.canvasBrowser !== null || state.sessionBrowser !== null;
 
   // ── Flow-control actions for InputBox row ──────────────────────────────────
   const flowActions: import('./InputBox.js').FlowAction[] | undefined = useMemo(() => {
@@ -473,14 +468,6 @@ export function SessionPanel({ store, onSendPrompt, onAbort, onCanvasBrowserActi
                     )}
 
                     {/* Dataset overwrite confirmation dialog */}
-                    {state.datasetOverwriteDialog && (
-                      <DatasetOverwriteDialog
-                        name={state.datasetOverwriteDialog.name}
-                        path={state.datasetOverwriteDialog.path}
-                        onRespond={handleDatasetOverwriteRespond}
-                      />
-                    )}
-
                     {/* Canvas browser modal */}
                     {state.canvasBrowser && onCanvasBrowserAction && (
                       <CanvasBrowser
@@ -592,7 +579,6 @@ export function SessionPanel({ store, onSendPrompt, onAbort, onCanvasBrowserActi
           multiChatMode={state.multiChatMode}
           selectedMembers={state.selectedMembers}
           onMultiChatChange={(enabled, members) => {
-            store.setMultiChatMode(enabled, members);
             onSetMultiChatMode?.(enabled, members);
           }}
           permissionMode={state.permissionMode}

@@ -91,29 +91,18 @@ export interface Bridge {
   fileSearch(query: string, requestId: string, cwd?: string, limit?: number): void;
 
   /** Request list of prompt templates from manifest.json. */
-  listPrompts(): void;
 
   /** Read a specific prompt Markdown file. */
-  readPrompt(filename: string): void;
 
   /** Write a prompt Markdown file. */
-  writePrompt(filename: string, content: string): void;
 
   /** Delete a .vesper-lite/prompts/ override, reverting to the built-in default. */
-  deletePromptOverride(filename: string): void;
 
   /** Request a preview of merged prompts for a specific ego/role. */
-  readPromptPreview(ego: any, roleName: string, customPrompt?: string, supervisorRules?: string, prependSystemToEgo?: boolean): void;
 
   /** Switch to a specific persona+role member. */
-  switchMember(sessionId: string, personaName: string, roleName: string): void;
-  setMultiChatMode(sessionId: string, enabled: boolean, members: string[]): void;
 
   // ── TODO Management ──
-  todoList(): void;
-  todoAdd(text: string): void;
-  todoUpdate(id: string, updates: { text?: string; done?: boolean }): void;
-  todoDelete(id: string): void;
 }
 
 export function createBridge(): Bridge {
@@ -280,46 +269,6 @@ export function createBridge(): Bridge {
       send({ cmd: 'file_search', query, requestId, ...(cwd ? { cwd } : {}), ...(limit ? { limit } : {}) });
     },
 
-    listPrompts() {
-      send({ cmd: 'prompts_list' });
-    },
-
-    readPrompt(filename: string) {
-      send({ cmd: 'prompt_read', filename });
-    },
-
-    writePrompt(filename: string, content: string) {
-      send({ cmd: 'prompt_write', filename, content });
-    },
-
-    deletePromptOverride(filename: string) {
-      send({ cmd: 'prompt_delete_override', filename });
-    },
-
-    readPromptPreview(ego: any, roleName: string, customPrompt?: string, supervisorRules?: string, prependSystemToEgo?: boolean) {
-      send({ cmd: 'prompt_preview', ego, roleName, customPrompt, supervisorRules, prependSystemToEgo });
-    },
-
-    switchMember(sessionId: string, personaName: string, roleName: string) {
-      send({ cmd: 'switch_member', sessionId, personaName, roleName });
-    },
-
-    setMultiChatMode(sessionId: string, enabled: boolean, members: string[]) {
-      send({ cmd: 'multi_chat_mode', sessionId, enabled, members });
-    },
-
-    todoList() {
-      send({ cmd: 'todo_list' });
-    },
-    todoAdd(text: string) {
-      send({ cmd: 'todo_add', text });
-    },
-    todoUpdate(id: string, updates: { text?: string; done?: boolean }) {
-      send({ cmd: 'todo_update', id, ...updates });
-    },
-    todoDelete(id: string) {
-      send({ cmd: 'todo_delete', id });
-    },
 
     /** Send a global command (no session required, e.g. cookie management). */
     sendGlobalCommand(command: ServerCommand): void {

@@ -232,7 +232,6 @@ export interface WebStoreState {
   /** Cron data collection settings. */
   cronDataCollection: { enabled: boolean; path: string } | null;
   /** Pending dataset overwrite confirmation dialog. */
-  datasetOverwriteDialog: { requestId: string; name: string; path: string } | null;
   /** Whether this session has an unread notification from another session (yellow dot). */
   hasSessionNotification: boolean;
   /** Monotonically increasing counter incremented every time this session is activated/switched to. */
@@ -278,10 +277,6 @@ export interface WebStore {
   togglePublicMode(): void;
   setPermissionMode(mode: 'manual' | 'auto' | 'supervisor'): void;
   setMultiChatMode(enabled: boolean, members: string[]): void;
-  showDatasetOverwriteDialog(requestId: string, name: string, path: string): void;
-  dismissDatasetOverwriteDialog(): void;
-  setDatasetOverwriteResponder(fn: (requestId: string, decision: 'overwrite' | 'cancel') => void): void;
-  respondDatasetOverwrite(decision: 'overwrite' | 'cancel'): void;
   setSessionNotification(): void;
   clearSessionNotification(): void;
   notifyActivated(): void;
@@ -348,7 +343,6 @@ function createInitialState(sessionId: string): WebStoreState {
     cronTargeted: 0,
     cronRunning: false,
     cronDataCollection: null,
-    datasetOverwriteDialog: null,
     hasSessionNotification: false,
     activationCount: 0,
   };
@@ -1247,39 +1241,6 @@ export function createWebStore(sessionId: string, options?: { defaultCollapsed?:
     notify();
   }
 
-  function showDatasetOverwriteDialog(requestId: string, name: string, path: string): void {
-    state = {
-      ...state,
-      datasetOverwriteDialog: { requestId, name, path },
-    };
-    notify();
-  }
-
-  function dismissDatasetOverwriteDialog(): void {
-    state = {
-      ...state,
-      datasetOverwriteDialog: null,
-    };
-    notify();
-  }
-
-  // Dataset overwrite responder
-  let datasetOverwriteResponder: ((requestId: string, decision: 'overwrite' | 'cancel') => void) | null = null;
-
-  function setDatasetOverwriteResponder(fn: (requestId: string, decision: 'overwrite' | 'cancel') => void): void {
-    datasetOverwriteResponder = fn;
-  }
-
-  function respondDatasetOverwrite(decision: 'overwrite' | 'cancel'): void {
-    const dialog = state.datasetOverwriteDialog;
-    if (!dialog) return;
-    state = { ...state, datasetOverwriteDialog: null };
-    notify();
-    if (datasetOverwriteResponder) {
-      datasetOverwriteResponder(dialog.requestId, decision);
-    }
-  }
-
   function setSessionNotification(): void {
     if (!state.hasSessionNotification) {
       state = { ...state, hasSessionNotification: true };
@@ -1396,10 +1357,6 @@ export function createWebStore(sessionId: string, options?: { defaultCollapsed?:
     togglePublicMode,
     setPermissionMode,
     setMultiChatMode,
-    showDatasetOverwriteDialog,
-    dismissDatasetOverwriteDialog,
-    setDatasetOverwriteResponder,
-    respondDatasetOverwrite,
     setSessionNotification,
     clearSessionNotification,
     notifyActivated,

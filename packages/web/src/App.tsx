@@ -15,7 +15,6 @@ import { ConfigPanel } from './components/ConfigPanel.js';
 import { SessionCreateDialog, bumpSessionCounter } from './components/SessionCreateDialog.js';
 import { DebugPanel } from './components/DebugPanel.js';
 
-import { TodoPanel } from './components/TodoPanel.js';
 import { FilePanel } from './components/FilePanel.js';
 import { Toolbar } from './components/Toolbar.js';
 import { DockLayoutWrapper } from './components/dock/DockLayoutWrapper.js';
@@ -93,7 +92,6 @@ function wireStoreResponders(bridge: Bridge, store: WebStore, sessionId: string)
   });
   store.setDatasetOverwriteResponder((requestId, decision) => {
     bridge.sendCommand(sessionId, {
-      cmd: 'dataset_overwrite_respond',
       id: `ds-ow-${Date.now()}`,
       requestId,
       decision,
@@ -571,9 +569,6 @@ function AppInner() {
           }
           return;
 
-        case 'dataset_overwrite_request':
-          session.store.showDatasetOverwriteDialog(event.requestId, event.name, event.path);
-          return;
 
         case 'permission_request':
           notify('Vesper Lite — Approval Needed', `"${event.toolName}" requires permission.`);
@@ -1115,11 +1110,6 @@ function AppInner() {
     });
   }, []);
 
-  const handleSwitchMemberFor = useCallback((tabId: string, personaName: string, roleName: string) => {
-    const bridge = bridgeRef.current;
-    if (!bridge) return;
-    bridge.switchMember(tabId, personaName, roleName);
-  }, []);
 
   // ── Provider switching (tab-targeted) ──────────────────────────
 
@@ -1175,18 +1165,6 @@ function AppInner() {
     }
   }, []);
 
-  const handleSetMultiChatModeFor = useCallback((tabId: string, enabled: boolean, members: string[]) => {
-    const tab = tabsRef.current.find(t => t.id === tabId);
-    if (tab?.kind === 'session') {
-      // Update local store
-      tab.store.setMultiChatMode(enabled, members);
-      // Notify core
-      const bridge = bridgeRef.current;
-      if (bridge) {
-        bridge.setMultiChatMode(tabId, enabled, members);
-      }
-    }
-  }, []);
 
   const handleSetPermissionModeFor = useCallback((tabId: string, mode: 'manual' | 'auto' | 'supervisor') => {
     const tab = tabsRef.current.find(t => t.id === tabId);
@@ -1252,17 +1230,15 @@ function AppInner() {
         onSessionBrowserAction={(action) => handleSessionBrowserActionFor(tab.id, action)}
         onRequestAction={(action) => handleRequestActionFor(tab.id, action)}
         onSwitchPersona={(name) => handleSwitchPersonaFor(tab.id, name)}
-        onSwitchMember={(personaName, roleName) => handleSwitchMemberFor(tab.id, personaName, roleName)}
         onSwitchProvider={(profile) => handleSwitchProviderFor(tab.id, profile)}
         onDisableSupervisor={() => handleDisableSupervisorFor(tab.id)}
         onUpdateSupervisorRules={(rules) => handleUpdateSupervisorRulesFor(tab.id, rules)}
         onTogglePublicMode={() => handleTogglePublicModeFor(tab.id)}
         onSetPermissionMode={(mode) => handleSetPermissionModeFor(tab.id, mode)}
-        onSetMultiChatMode={(enabled, members) => handleSetMultiChatModeFor(tab.id, enabled, members)}
         onFileSearch={handleFileSearch}
       />
     );
-  }, [sendPromptTo, handleAbortFor, handleCanvasBrowserActionFor, handleSessionBrowserActionFor, handleRequestActionFor, handleSwitchPersonaFor, handleSwitchMemberFor, handleSwitchProviderFor, handleDisableSupervisorFor, handleUpdateSupervisorRulesFor, handleTogglePublicModeFor, handleSetPermissionModeFor, handleSetMultiChatModeFor, handleFileSearch]);
+  }, [sendPromptTo, handleAbortFor, handleCanvasBrowserActionFor, handleSessionBrowserActionFor, handleRequestActionFor, handleSwitchPersonaFor, handleSwitchProviderFor, handleDisableSupervisorFor, handleUpdateSupervisorRulesFor, handleTogglePublicModeFor, handleSetPermissionModeFor, handleFileSearch]);
 
   const handleDockFocusTab = useCallback((tabId: string) => {
     setFocusedTabId(tabId);
@@ -1423,13 +1399,11 @@ function AppInner() {
                 onSessionBrowserAction={handleSessionBrowserAction}
                 onRequestAction={activeTabId ? (action) => handleRequestActionFor(activeTabId, action) : undefined}
                 onSwitchPersona={activeTabId ? (name) => handleSwitchPersonaFor(activeTabId, name) : undefined}
-                onSwitchMember={activeTabId ? (personaName, roleName) => handleSwitchMemberFor(activeTabId, personaName, roleName) : undefined}
                 onSwitchProvider={activeTabId ? (profile) => handleSwitchProviderFor(activeTabId, profile) : undefined}
                 onDisableSupervisor={activeTabId ? () => handleDisableSupervisorFor(activeTabId) : undefined}
                 onUpdateSupervisorRules={activeTabId ? (rules) => handleUpdateSupervisorRulesFor(activeTabId, rules) : undefined}
                 onTogglePublicMode={activeTabId ? () => handleTogglePublicModeFor(activeTabId) : undefined}
                 onSetPermissionMode={activeTabId ? (mode) => handleSetPermissionModeFor(activeTabId, mode) : undefined}
-                onSetMultiChatMode={activeTabId ? (enabled, members) => handleSetMultiChatModeFor(activeTabId, enabled, members) : undefined}
                 onFileSearch={handleFileSearch}
               />
             ) : (
@@ -1564,12 +1538,6 @@ function AppInner() {
         />
       )}
 
-      {showTodo && bridgeRef.current && (
-        <TodoPanel
-          bridge={bridgeRef.current}
-          onClose={() => setShowTodo(false)}
-        />
-      )}
 
       
     </div>
