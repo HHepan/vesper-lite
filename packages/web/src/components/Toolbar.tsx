@@ -12,7 +12,6 @@ import { useTheme } from '../contexts/ThemeContext.js';
 interface ToolbarProps {
   onConfig: () => void;
   onDebug: () => void;
-  onFiles: () => void;
   onTodo: () => void;
   onToggleSidebar: () => void;
   sidebarVisible: boolean;
@@ -20,7 +19,7 @@ interface ToolbarProps {
   activeTabKind?: 'session';
 }
 
-export function Toolbar({ onConfig, onDebug, onFiles, onTodo, onToggleSidebar, sidebarVisible, bridgeState }: ToolbarProps) {
+export function Toolbar({ onConfig, onDebug, onTodo, onToggleSidebar, sidebarVisible, bridgeState }: ToolbarProps) {
   const { themeName, toggleTheme } = useTheme();
   const dotColor = bridgeState === 'connected' ? theme.toolSuccess
     : bridgeState === 'connecting' ? theme.thinkingDot
@@ -61,13 +60,6 @@ export function Toolbar({ onConfig, onDebug, onFiles, onTodo, onToggleSidebar, s
           title="Debug wire log"
         >
           D
-        </button>
-        <button
-          style={styles.actionBtn}
-          onClick={onFiles}
-          title="Delivered files"
-        >
-          📁
         </button>
         <button
           style={styles.actionBtn}

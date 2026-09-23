@@ -15,7 +15,6 @@ import { ConfigPanel } from './components/ConfigPanel.js';
 import { SessionCreateDialog, bumpSessionCounter } from './components/SessionCreateDialog.js';
 import { DebugPanel } from './components/DebugPanel.js';
 
-import { FilePanel } from './components/FilePanel.js';
 import { Toolbar } from './components/Toolbar.js';
 import { DockLayoutWrapper } from './components/dock/DockLayoutWrapper.js';
 import { SessionTabContent } from './components/dock/SessionTabContent.js';
@@ -139,7 +138,6 @@ function AppInner() {
   });
   const [sidebarResizing, setSidebarResizing] = useState(false);
  
-  const [showFiles, setShowFiles] = useState(false);
   const [wireLog, setWireLog] = useState<WireLogEntry[]>([]);
   const wireLogRef = useRef<WireLogEntry[]>([]);
   const tabsRef = useRef(tabs);
@@ -1376,7 +1374,6 @@ function AppInner() {
             onRename={renameTab}
             onConfig={() => setShowConfig(true)}
             onDebug={() => setShowDebug(true)}
-            onFiles={() => setShowFiles(true)}
             onTodo={() => setShowTodo(true)}
             bridgeState={bridgeState}
           />
@@ -1459,7 +1456,6 @@ function AppInner() {
             <Toolbar
               onConfig={() => setShowConfig(true)}
               onDebug={() => setShowDebug(true)}
-              onFiles={() => setShowFiles(true)}
               onTodo={() => setShowTodo(true)}
               onToggleSidebar={() => setSidebarVisible(!sidebarVisible)}
               sidebarVisible={sidebarVisible}
@@ -1525,11 +1521,6 @@ function AppInner() {
         />
       )}
 
-      {showFiles && (
-        <FilePanel
-          onClose={() => setShowFiles(false)}
-        />
-      )}
 
 
       

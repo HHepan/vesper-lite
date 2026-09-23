@@ -49,12 +49,11 @@ interface TabBarProps {
   onRename: (id: string, name: string) => void;
   onConfig: () => void;
   onDebug: () => void;
-  onFiles: () => void;
   onTodo: () => void;
   bridgeState: BridgeState;
 }
 
-export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, onSelect, onNewSession, onClose, onRename, onConfig, onDebug, onFiles, onTodo, bridgeState }: TabBarProps) {
+export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, onSelect, onNewSession, onClose, onRename, onConfig, onDebug, onTodo, bridgeState }: TabBarProps) {
   const { themeName, toggleTheme } = useTheme();
   const isMobile = useIsMobile();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -167,12 +166,6 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
                   onClick={() => { setMenuOpen(false); onDebug(); }}
                 >
                   <span style={styles.menuIcon}>D</span> 调试日志
-                </button>
-                <button
-                  style={styles.menuItem}
-                  onClick={() => { setMenuOpen(false); onFiles(); }}
-                >
-                  <span style={styles.menuIcon}>📁</span> 文件
                 </button>
                 <button
                   style={styles.menuItem}
@@ -445,12 +438,6 @@ export function TabBar({ tabs, activeId, sessionStates, sessionTags, onSaveTag, 
                 onClick={() => { setMenuOpen(false); onDebug(); }}
               >
                 <span style={styles.menuIcon}>D</span> Debug
-              </button>
-              <button
-                style={styles.menuItem}
-                onClick={() => { setMenuOpen(false); onFiles(); }}
-              >
-                <span style={styles.menuIcon}>📁</span> Files
               </button>
               <button
                 style={styles.menuItem}
