@@ -210,6 +210,21 @@ export class LiteServer {
       ws.send(JSON.stringify({ type: 'session_created', sessionId: id, name, success: true }));
       // 必须立刻给当前连接发 ready 事件，否则 WebUI 的 store.ready 为 false，输入框会被 disabled 禁用
       ws.send(JSON.stringify({ type: 'ready', sessionId: id }));
+      ws.send(JSON.stringify({
+        type: 'token_budget',
+        sessionId: id,
+        snapshot: {
+          pinnedTokens: 0,
+          foldedTokens: 0,
+          activeTokens: 0,
+          reminderTokens: 0,
+          totalTokens: 0,
+          budgetTokens: 100000,
+          utilizationPercent: 0,
+          source: 'estimated',
+          cumulativeTokens: 0,
+        },
+      }));
       
       // 给前端发送 provider 状态（让右上角的可选 provider 显示出来）
       try {

@@ -45,6 +45,7 @@ import { listAllToolsets, getToolset, createPolicyConfigFromToolset } from './to
 import { applyPipeline } from './tools/policy.js';
 import { buildSystemPrompt } from './prompt-builder.js';
 import { countTokens } from './tokenizer/index.js';
+import { createDiagnosticsCollector } from './diagnostics.js';
 import { createToolExecutorRegistry } from '@vesper/shared';
 import { readTool, writeTool, writeMdTool, editTool, globTool, grepTool } from './tools/index.js';
 import { createNativeShellToolEntry } from './tools/bash-bridge.js';
@@ -278,7 +279,13 @@ export class AgentEventLoop {
 
   // ── Canvas operations ──
 
-  getCanvasSnapshot(): CanvasBrowserSnapshot {
+  emitTokenBudget(): void {
+    const diag = createDiagnosticsCollector();
+    const snapshot = diag.getTokenBudgetSnapshot(this.state);
+    this.emit({ type: 'token_budget', snapshot });
+  }
+
+    getCanvasSnapshot(): CanvasBrowserSnapshot {
     return buildCanvasSnapshot(this.state.canvas);
   }
 
@@ -296,6 +303,8 @@ export class AgentEventLoop {
           ...this.state,
           canvas: manualFoldBlock(this.state.canvas, blockId, this.state.canvasConfig),
         };
+        this.emit({ type: 'canvas_tokens', count: canvasTokenCount(this.state.canvas) });
+      this.emitTokenBudget();
         return { success: true, message: 'Block folded' };
       case 'unfold':
         if (!block.folded) return { success: false, message: 'Block not folded' };
@@ -303,12 +312,16 @@ export class AgentEventLoop {
           ...this.state,
           canvas: expandBlock(this.state.canvas, blockId, this.state.canvasConfig),
         };
+        this.emit({ type: 'canvas_tokens', count: canvasTokenCount(this.state.canvas) });
+        this.emitTokenBudget();
         return { success: true, message: 'Block unfolded' };
       case 'delete':
         this.state = {
           ...this.state,
           canvas: deleteBlock(this.state.canvas, blockId),
         };
+        this.emit({ type: 'canvas_tokens', count: canvasTokenCount(this.state.canvas) });
+        this.emitTokenBudget();
         return { success: true, message: 'Block deleted' };
       default:
         return { success: false, message: `Unknown op: ${op}` };
@@ -345,6 +358,8 @@ export class AgentEventLoop {
       reminders: [],
     };
     this.emit({ id: '', type: 'canvas_cleared' });
+    this.emit({ type: 'canvas_tokens', count: 0 });
+    this.emitTokenBudget();
   }
 
   // ── Session management ──
@@ -367,6 +382,7 @@ export class AgentEventLoop {
       canvas: restoreLegacyFoldedBlocks(loaded.canvas),
     };
     this.emit({ type: 'session_loaded', sessionId, checkpointId, canvasBlocks: this.state.canvas.blocks });
+    this.emitTokenBudget();
     return this.state;
   }
 

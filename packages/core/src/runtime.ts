@@ -289,6 +289,9 @@ export async function* runFlow(
   const report = diagnostics.getReport(config.model);
   yield { type: 'diagnostics_update', report };
 
+  const snapshot = diagnostics.getTokenBudgetSnapshot(state);
+  yield { type: 'token_budget', snapshot };
+
   yield { type: 'done' };
   return state;
 }

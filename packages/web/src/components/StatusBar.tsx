@@ -263,20 +263,7 @@ export const StatusBar = memo(function StatusBar({
             </span>
           )}
           <span style={{ flex: 1 }} />
-          {onTogglePublicMode && (
-            <label style={mobileStyles.publicLabel}>
-              <input
-                type="checkbox"
-                checked={multiChatMode ? true : (publicMode ?? false)}
-                onChange={multiChatMode ? undefined : onTogglePublicMode}
-                disabled={multiChatMode}
-                style={{ accentColor: 'var(--status-success)', margin: 0 }}
-              />
-              <span style={{ color: (multiChatMode || publicMode) ? 'var(--status-success-light)' : theme.dimText }}>
-                {multiChatMode ? '🔒 公共聊天' : '公共聊天'}
-              </span>
-            </label>
-          )}
+
           {onSetPermissionMode && (
             <span ref={permAnchorRef} style={{ position: 'relative' }}>
               <span
@@ -428,21 +415,7 @@ export const StatusBar = memo(function StatusBar({
           )}
         </>
       )}
-      {/* Public mode toggle — locked to ON when multi-chat mode is active */}
-      {onTogglePublicMode && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.3ch', marginRight: '1ch', cursor: multiChatMode ? 'not-allowed' : 'pointer', userSelect: 'none', opacity: multiChatMode ? 0.7 : 1 }}>
-          <input
-            type="checkbox"
-            checked={multiChatMode ? true : (publicMode ?? false)}
-            onChange={multiChatMode ? undefined : onTogglePublicMode}
-            disabled={multiChatMode}
-            style={{ accentColor: 'var(--status-success)' }}
-          />
-          <span style={{ fontSize: '0.85em', color: (multiChatMode || publicMode) ? 'var(--status-success-light)' : theme.dimText }}>
-            {multiChatMode ? '🔒 公共聊天' : '公共聊天'}
-          </span>
-        </label>
-      )}
+
       {/* Permission mode dropdown */}
       {onSetPermissionMode && (
         <label style={{ display: 'flex', alignItems: 'center', gap: '0.4ch', marginRight: '1ch', cursor: 'pointer', userSelect: 'none' }}>
