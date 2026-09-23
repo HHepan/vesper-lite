@@ -67,6 +67,17 @@ const PROJECT_TABS: { id: TabId; label: string }[] = [
   { id: 'profiles', label: '配置方案 (Profiles)' },
 ];
 
+// Keys that belong to project-level config (stored in .vesper-lite/config.json)
+const PROJECT_CONFIG_KEYS = new Set([
+  'profiles', 'defaultProfile', 'maxIterations', 'maxTokens', 'proxy',
+]);
+
+// Keys that belong to global config (stored in ~/.vesper-lite/config.json)
+const GLOBAL_CONFIG_KEYS = new Set([
+  'user_name', 'thinking', 'supportsVision', 'supportsAudio', 'supportsGif',
+  'maxIterations', 'maxTokens', 'proxy', 'profiles', 'defaultProfile',
+]);
+
 export function ConfigPanel({
   onClose,
   bridge,
