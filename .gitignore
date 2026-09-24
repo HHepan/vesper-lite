@@ -9,3 +9,4 @@ dist/
 nohup.out
 
 .vesper-lite/images/
+.vesper-lite/skills/

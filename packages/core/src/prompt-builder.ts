@@ -17,6 +17,7 @@ import {
 } from './prompts.js';
 import { serializeCanvasMarkdown } from './canvas.js';
 import { serializeReminders } from './reminder.js';
+import { existsSync, readFileSync } from 'node:fs';
 
 // Identity and protocol constants are imported from prompts.js (store-backed)
 
@@ -114,7 +115,33 @@ export function buildStructuredSystemPrompt(
     sections.push({ name: 'environment', content: envBlock });
   }
 
-  // 7. Canvas History
+  // 7. Loaded Skills
+  if (state.loadedSkills && state.loadedSkills.length > 0) {
+    const skillContents: string[] = [];
+    for (const name of state.loadedSkills) {
+      try {
+        const dir = state.skillDir || '.vesper-lite/skills';
+        // Try both directory style and flat file style
+        let content = '';
+        const try1 = `${dir}/${name}/SKILL.md`;
+        const try2 = `${dir}/${name}.md`;
+        if (existsSync(try1)) content = readFileSync(try1, 'utf8');
+        else if (existsSync(try2)) content = readFileSync(try2, 'utf8');
+        if (content) {
+          // strip frontmatter
+          let body = content;
+          const fmMatch = body.match(/^---\n[\s\S]+?\n---\n\n?/);
+          if (fmMatch) body = body.slice(fmMatch[0].length);
+          skillContents.push(`\n# Skill: ${name}\n${body.trim()}\n`);
+        }
+      } catch {}
+    }
+    if (skillContents.length > 0) {
+      sections.push({ name: 'loaded_skills', content: skillContents.join('\n') });
+    }
+  }
+
+  // 8. Canvas History
   const canvasMarkdown = options?.injectCanvasHistory
     ? serializeCanvasMarkdown(state.canvas)
     : serializeCanvasMarkdown(state.canvas, undefined, true /* activeOnly */);

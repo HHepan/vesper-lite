@@ -1150,6 +1150,12 @@ export interface AgentState {
   multiChatOwnerAbsentTurns?: number;
   /** Counter: total consecutive non-owner turns in the current multi-chat session. */
   multiChatTotalTurns?: number;
+
+  // ── Loaded Skills ────────────────────────────────────────────────
+  /** Names of currently loaded prompt skills. Rendered into the system prompt. */
+  loadedSkills?: string[];
+  /** Directory where skills are discovered (default: <cwd>/.vesper-lite/skills). */
+  skillDir?: string;
 }
 
 export function createDefaultAgentState(overrides?: Partial<AgentState>): AgentState {

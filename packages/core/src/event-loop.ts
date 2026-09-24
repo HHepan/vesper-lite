@@ -5,7 +5,7 @@ import { persistImages, generateSessionSlug } from './image-store.js';
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { randomUUID } from 'node:crypto';
-import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 import type {
@@ -93,6 +93,7 @@ export class AgentEventLoop {
   private eventHandlers: EventHandler[] = [];
   private pendingPermissions: Map<string, { resolve: (v: any) => void; reject: (e: any) => void }> = new Map();
   private pendingAskUser: Map<string, { resolve: (v: AskUserAnswers) => void; reject: (e: any) => void }> = new Map();
+  private loadedSkills: Set<string> = new Set();
 
   constructor(config: EventLoopConfig) {
     this.config = config;
@@ -111,6 +112,7 @@ export class AgentEventLoop {
 
     // Load persisted permissions
     this.permissionMemory = new Map();
+    this.loadedSkills = new Set<string>();
     loadPermissions(process.cwd()).then(map => {
       this.permissionMemory = map;
     }).catch(() => {});
@@ -170,9 +172,12 @@ export class AgentEventLoop {
       const userBlock = createBlock('user_message', input, {
         imageRefs: persistedImagePaths?.length ? persistedImagePaths : (images?.length ? images.map((_: any, i: number) => `img-${i}`) : undefined),
       });
+      const loadedSkills = [...this.loadedSkills];
       this.state = {
         ...this.state,
         userMessage: input,
+        loadedSkills,
+        skillDir: this.resolveSkillDir(),
         canvas: appendBlock(this.state.canvas, userBlock),
       };
 
@@ -505,6 +510,94 @@ export class AgentEventLoop {
       os: process.platform,
       shell: process.env.SHELL ?? '/bin/bash',
     };
+  }
+
+
+  // ── Skill Management ──
+
+  private resolveSkillDir(): string {
+    const projDir = join(process.cwd(), '.vesper-lite', 'skills');
+    if (existsSync(projDir)) return projDir;
+    const homeDir = join(homedir(), '.vesper-lite', 'skills');
+    if (existsSync(homeDir)) return homeDir;
+    return projDir;
+  }
+
+  private parseSkillFrontmatter(content: string): { name?: string; description?: string } {
+    const lines = content.split('\n');
+    const res: { name?: string; description?: string } = {};
+    if (lines[0] === '---') {
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line === '---') break;
+        const match = line.match(/^([a-zA-Z_-]+):\s*(.*)$/);
+        if (match) {
+          const key = match[1].toLowerCase();
+          if (key === 'name' || key === 'description') {
+            res[key] = match[2].trim();
+          }
+        }
+      }
+    }
+    return res;
+  }
+
+  skillList(): Array<{ name: string; description?: string; path: string }> {
+    const dir = this.resolveSkillDir();
+    if (!existsSync(dir)) return [];
+    const skills: Array<{ name: string; description?: string; path: string }> = [];
+    try {
+      const entries = readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const mdPath = join(dir, entry.name, 'SKILL.md');
+          if (existsSync(mdPath)) {
+            const content = readFileSync(mdPath, 'utf8');
+            const meta = this.parseSkillFrontmatter(content);
+            skills.push({ name: meta.name ?? entry.name, description: meta.description, path: entry.name });
+          }
+        } else if (entry.name.endsWith('.md')) {
+          const mdPath = join(dir, entry.name);
+          const content = readFileSync(mdPath, 'utf8');
+          const meta = this.parseSkillFrontmatter(content);
+          const base = entry.name.slice(0, -3);
+          skills.push({ name: meta.name ?? base, description: meta.description, path: entry.name });
+        }
+      }
+    } catch {}
+    return skills;
+  }
+
+  skillLoad(name: string): { success: boolean; message: string } {
+    if (this.loadedSkills.has(name)) {
+      return { success: true, message: `Skill '${name}' is already loaded.` };
+    }
+    const skills = this.skillList();
+    const match = skills.find(s => s.name === name || s.path === name || s.path.replace(/\.md$/, '') === name);
+    if (!match) {
+      return { success: false, message: `Skill '${name}' not found in ${this.resolveSkillDir()}` };
+    }
+    this.loadedSkills.add(match.name);
+    return { success: true, message: `Skill '${match.name}' loaded successfully.` };
+  }
+
+  skillUnload(name: string): { success: boolean; message: string } {
+    const resolvedName = [...this.loadedSkills].find(s => s === name || s.toLowerCase() === name.toLowerCase());
+    if (!resolvedName) {
+      return { success: false, message: `Skill '${name}' is not loaded.` };
+    }
+    this.loadedSkills.delete(resolvedName);
+    return { success: true, message: `Skill '${resolvedName}' unloaded.` };
+  }
+
+  skillClear(): { success: boolean; message: string } {
+    const count = this.loadedSkills.size;
+    this.loadedSkills.clear();
+    return { success: true, message: `Cleared ${count} loaded skill(s).` };
+  }
+
+  getLoadedSkillNames(): string[] {
+    return [...this.loadedSkills];
   }
 
   private taskAccessor(): TaskStateAccessor {

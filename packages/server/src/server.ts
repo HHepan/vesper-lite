@@ -574,6 +574,43 @@ export class LiteServer {
             case 'task':
               session.loop.taskQuery();
               break;
+            case 'skill': {
+              const sub = parts[1] ?? 'list';
+              const arg2 = parts.slice(2).join(' ');
+              if (sub === 'list' || sub === 'ls') {
+                const skills = session.loop.skillList();
+                if (skills.length === 0) {
+                  ws.send(JSON.stringify({ type: 'status', sessionId: sid, id: msg.id, message: 'No skills found. Place markdown files in .vesper-lite/skills/' }));
+                } else {
+                  const loaded = session.loop.getLoadedSkillNames();
+                  const lines = skills.map((s: any) => {
+                    const tag = loaded.includes(s.name) ? '✓ ' : '  ';
+                    return tag + s.name + (s.description ? ' - ' + s.description : '');
+                  });
+                  ws.send(JSON.stringify({ type: 'status', sessionId: sid, id: msg.id, message: lines.join('\n') }));
+                }
+              } else if (sub === 'load' || sub === 'import') {
+                if (!arg2) {
+                  ws.send(JSON.stringify({ type: 'error', sessionId: sid, id: msg.id, error: { message: 'Usage: /skill load <name>' } }));
+                } else {
+                  const res = session.loop.skillLoad(arg2);
+                  ws.send(JSON.stringify({ type: res.success ? 'status' : 'error', sessionId: sid, id: msg.id, message: res.message, error: res.success ? undefined : { message: res.message } }));
+                }
+              } else if (sub === 'unload') {
+                if (!arg2) {
+                  ws.send(JSON.stringify({ type: 'error', sessionId: sid, id: msg.id, error: { message: 'Usage: /skill unload <name>' } }));
+                } else {
+                  const res = session.loop.skillUnload(arg2);
+                  ws.send(JSON.stringify({ type: res.success ? 'status' : 'error', sessionId: sid, id: msg.id, message: res.message, error: res.success ? undefined : { message: res.message } }));
+                }
+              } else if (sub === 'clear') {
+                const res = session.loop.skillClear();
+                ws.send(JSON.stringify({ type: 'status', sessionId: sid, id: msg.id, message: res.message }));
+              } else {
+                ws.send(JSON.stringify({ type: 'error', sessionId: sid, id: msg.id, error: { message: 'Unknown skill subcommand' } }));
+              }
+              break;
+            }
             case 'cd':
               if (arg) {
                 try {
