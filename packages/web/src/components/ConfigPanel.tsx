@@ -86,7 +86,8 @@ export function ConfigPanel({
   onClose,
   bridge,
   storeRef,
-}: ConfigPanelProps) {
+  sessionId,
+}: ConfigPanelProps & { sessionId?: string }) {
   const isMobile = useIsMobile();
   const { isClosing, handleClose, handleOverlayClick, overlayAnimation, panelAnimation } = useModalAnimation(onClose);
   
@@ -102,6 +103,12 @@ export function ConfigPanel({
   const [error, setError] = useState<string | null>(null);
   const [configPath, setConfigPath] = useState('');
   const [activeTab, setActiveTab] = useState<TabId>('common');
+  const [capabilities, setCapabilities] = useState<{
+    tools: Array<{ name: string; description?: string; parameters?: Record<string, any> }>;
+    skills: Array<{ name: string; description?: string; path: string }>;
+    loadedSkills: string[];
+  } | null>(null);
+  const [capabilitiesLoading, setCapabilitiesLoading] = useState(false);
   const [showCopyConfirm, setShowCopyConfirm] = useState(false);
   const [copying, setCopying] = useState(false);
 
@@ -168,6 +175,14 @@ export function ConfigPanel({
           setError(`保存失败: ${event.error}`);
           setSaveSuccess(false);
         }
+      }
+      if (event.type === 'capabilities') {
+        setCapabilities({
+          tools: event.tools ?? [],
+          skills: event.skills ?? [],
+          loadedSkills: event.loadedSkills ?? [],
+        });
+        setCapabilitiesLoading(false);
       }
       // 当 Scene 加载后，配置已更新，重新读取
       if (event.type === 'config_updated') {
@@ -342,6 +357,16 @@ export function ConfigPanel({
     if (id === 'profiles' && profileCount > 0) return String(profileCount);
     return undefined;
   }
+
+  // ── Fetch capabilities when switching to tools/skills tabs ──
+  useEffect(() => {
+    if ((activeTab === 'tools' || activeTab === 'skills') && !capabilities) {
+      setCapabilitiesLoading(true);
+      bridge.queryCapabilities(sessionId);
+      const t = setTimeout(() => setCapabilitiesLoading(false), 8000);
+      return () => clearTimeout(t);
+    }
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Render ──────────────────────────────────────────────────────
 
