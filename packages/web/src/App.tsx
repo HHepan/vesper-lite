@@ -1504,6 +1504,7 @@ function AppInner() {
         <ConfigPanel
           onClose={() => setShowConfig(false)}
           bridge={bridgeRef.current}
+          sessionId={activeTabId ?? undefined}
           storeRef={activeTab?.kind === 'session' ? { current: activeTab.store } : { current: null }}
         />
       )}

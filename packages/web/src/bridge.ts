@@ -69,6 +69,9 @@ export interface Bridge {
   /** Request list of profiles from config.json. */
   listProfiles(): void;
 
+  /** Query available tools + skills for the Settings capabilities tabs. */
+  queryCapabilities(sessionId?: string): void;
+
   /** Send a CoreCommand to a session (sessionId is prepended by the wrapper). */
   sendCommand(sessionId: string, command: CoreCommand): void;
 

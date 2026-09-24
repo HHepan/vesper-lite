@@ -36,6 +36,7 @@ export type ServerLocalCommand =
   | { cmd: 'list_profiles' }
   | { cmd: 'get_toolsets' }
   | { cmd: 'get_skills' }
+  | { cmd: 'query_capabilities'; sessionId?: string }
   // ── Misc server services ──
   | { cmd: 'file_search'; query: string; requestId: string; cwd?: string; limit?: number }
   // ── Prompts management ──
@@ -86,6 +87,10 @@ export type ServerEvent =
   | { type: 'config_file_content'; content: string | null; path?: string; scope: string; error?: string }
   | { type: 'config_file_saved'; success: boolean; error?: string; scope: string }
   | { type: 'profile_list'; profiles: any[]; defaultProfile?: string }
+  | { type: 'capabilities'; sessionId?: string;
+      tools: Array<{ name: string; description?: string; parameters?: Record<string, any> }>;
+      skills: Array<{ name: string; description?: string; path: string }>;
+      loadedSkills: string[] }
   | { type: 'toolsets_info'; toolsets: any[]; infrastructureTools: string[]; curatorTools: string[] }
   | { type: 'skills_info'; skills: Array<{ name: string; description: string; requires?: string }> }
   // ── File search ──

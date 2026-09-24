@@ -460,6 +460,16 @@ export class AgentEventLoop {
     return cloneState(this.state);
   }
 
+  /**
+   * Return the tool definitions that would be registered for a run.
+   * Lazily builds the executor registry (idempotent — rebuilding produces the
+   * same list each time) so it works even before the first run.
+   */
+  getToolDefinitions(): import('@vesper/shared').ToolDefinition[] {
+    this.buildExecutorRegistry();
+    return this.state.toolDefinitions;
+  }
+
   getCanvasTokenCount(): number {
     return canvasTokenCount(this.state.canvas);
   }

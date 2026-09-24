@@ -404,6 +404,46 @@ export class LiteServer {
       return;
     }
 
+    // ── Capabilities query (tools + skills for Settings tabs) ──
+    if (cmd === 'query_capabilities') {
+      try {
+        // Prefer an existing session loop; otherwise spin up a throwaway loop
+        // purely to enumerate registered tools/skills (no provider call made).
+        let loop = this.sessions.get(msg.sessionId)?.loop;
+        if (!loop) {
+          loop = Array.from(this.sessions.values()).find(s => s.loop)?.loop;
+        }
+        if (!loop) {
+          const merged = await this.loadMergedConfig();
+          const cfg = resolveEffectiveConfig({}, {}, merged || {});
+          loop = new AgentEventLoop({
+            model: cfg.model || 'gpt-4o',
+            baseURL: cfg.baseURL || this.providerConfig.baseURL,
+            apiKey: cfg.apiKey || this.providerConfig.apiKey,
+            maxIterations: 25,
+            maxCanvasTokens: 200000,
+          });
+        }
+        const tools = loop.getToolDefinitions().map(d => ({
+          name: d.name,
+          description: d.description,
+          parameters: d.parameters,
+        }));
+        const skills = loop.skillList();
+        const loadedSkills = loop.getLoadedSkillNames();
+        ws.send(JSON.stringify({
+          type: 'capabilities',
+          sessionId: msg.sessionId,
+          tools,
+          skills,
+          loadedSkills,
+        }));
+      } catch (err: any) {
+        ws.send(JSON.stringify({ type: 'error', sessionId: msg.sessionId, error: { message: err.message } }));
+      }
+      return;
+    }
+
     // ── File search (@-mention) ──
     if (cmd === 'file_search') {
       ws.send(JSON.stringify({ type: 'file_search_result', requestId: msg.requestId, results: [] }));

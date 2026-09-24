@@ -494,6 +494,12 @@ export function ConfigPanel({
                 onChange={(v) => set('profiles', v)}
               />
             )}
+            {activeTab === 'tools' && (
+              <ToolsTab tools={capabilities?.tools ?? []} loading={capabilitiesLoading} />
+            )}
+            {activeTab === 'skills' && (
+              <SkillsTab skills={capabilities?.skills ?? []} loadedSkills={capabilities?.loadedSkills ?? []} loading={capabilitiesLoading} />
+            )}
            </div>
         )}
 
@@ -1175,4 +1181,242 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 'bold' as const,
   },
 };
+
+// ===========================================================================
+// Tab: Tools (Read-only list of available tools)
+// ===========================================================================
+
+function ToolsTab({ tools, loading }: {
+  tools: Array<{ name: string; description?: string; parameters?: Record<string, any> }>;
+  loading?: boolean;
+}) {
+  const [search, setSearch] = useState('');
+  const [expandedTool, setExpandedTool] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return tools;
+    const q = search.toLowerCase();
+    return tools.filter(t => t.name.toLowerCase().includes(q) || (t.description ?? '').toLowerCase().includes(q));
+  }, [tools, search]);
+
+  if (loading && tools.length === 0) {
+    return <div style={styles.loading}>正在查询已注册工具...</div>;
+  }
+
+  return (
+    <div style={styles.tabContent}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1ch' }}>
+        <input
+          style={{ ...styles.input, maxWidth: '300px' }}
+          placeholder="搜索工具 (如: bash, read, script)..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <span style={{ color: theme.dimText, fontSize: '0.85em' }}>
+          共 {filtered.length} 个工具可用
+        </span>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div style={styles.emptyHint}>
+          {search ? '没有匹配的工具' : '暂无可用工具'}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5em', marginTop: '0.5em' }}>
+          {filtered.map(t => {
+            const isExp = expandedTool === t.name;
+            const requiredProps: string[] = t.parameters?.required ?? [];
+            const propKeys = Object.keys(t.parameters?.properties ?? {});
+
+            return (
+              <div
+                key={t.name}
+                style={{
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '3px',
+                  padding: '0.5em 0.8ch',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.3em',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.8ch' }}>
+                    <span style={{ color: theme.toolName, fontWeight: 'bold', fontFamily: 'monospace' }}>
+                      {t.name}
+                    </span>
+                    {propKeys.length > 0 && (
+                      <span style={{ color: theme.dimText, fontSize: '0.8em' }}>
+                        ({propKeys.map(k => requiredProps.includes(k) ? `${k}*` : k).join(', ')})
+                      </span>
+                    )}
+                  </div>
+                  {t.parameters && (
+                    <button
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--accent-blue)',
+                        cursor: 'pointer',
+                        fontSize: '0.85em',
+                        padding: '0 0.5ch',
+                      }}
+                      onClick={() => setExpandedTool(isExp ? null : t.name)}
+                    >
+                      {isExp ? '收起参数 ▴' : '查看参数 ▾'}
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ color: theme.dimText, fontSize: '0.85em', lineHeight: '1.4em', whiteSpace: 'pre-wrap' }}>
+                  {t.description || '(暂无描述)'}
+                </div>
+
+                {isExp && t.parameters?.properties && (
+                  <div style={{
+                    marginTop: '0.4em',
+                    padding: '0.5em 0.8ch',
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '2px',
+                    fontSize: '0.8em',
+                  }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '0.3em', color: theme.dimText }}>
+                      参数架构 (Schema):
+                    </div>
+                    {Object.entries(t.parameters.properties).map(([pName, pSchema]: [string, any]) => {
+                      const isReq = requiredProps.includes(pName);
+                      return (
+                        <div key={pName} style={{ display: 'flex', gap: '0.5ch', marginBottom: '0.2em' }}>
+                          <span style={{ color: isReq ? 'var(--status-error)' : 'var(--accent-blue)', fontFamily: 'monospace' }}>
+                            {pName}{isReq ? '*' : ''}:
+                          </span>
+                          <span style={{ color: theme.dimText }}>
+                            [{pSchema.type || 'any'}]
+                          </span>
+                          <span style={{ color: 'var(--text-secondary)' }}>
+                            {pSchema.description || ''}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===========================================================================
+// Tab: Skills (Read-only list of available & loaded skills)
+// ===========================================================================
+
+function SkillsTab({ skills, loadedSkills, loading }: {
+  skills: Array<{ name: string; description?: string; path: string }>;
+  loadedSkills: string[];
+  loading?: boolean;
+}) {
+  const [search, setSearch] = useState('');
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return skills;
+    const q = search.toLowerCase();
+    return skills.filter(s => s.name.toLowerCase().includes(q) || (s.description ?? '').toLowerCase().includes(q));
+  }, [skills, search]);
+
+  if (loading && skills.length === 0) {
+    return <div style={styles.loading}>正在扫描内置与本地技能...</div>;
+  }
+
+  return (
+    <div style={styles.tabContent}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1ch' }}>
+        <input
+          style={{ ...styles.input, maxWidth: '300px' }}
+          placeholder="搜索 Skill..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <div style={{ color: theme.dimText, fontSize: '0.85em' }}>
+          共 {skills.length} 个可用 · 已加载 {loadedSkills.length} 个
+        </div>
+      </div>
+
+      <div style={{
+        padding: '0.5em 0.8ch',
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border-color)',
+        borderRadius: '3px',
+        color: theme.dimText,
+        fontSize: '0.85em',
+        lineHeight: '1.4em',
+      }}>
+        💡 提示：技能存放在项目 <code>.vesper-lite/skills/</code> 或用户全局 <code>~/.vesper-lite/skills/</code> 目录下。在会话中通过命令 <code>/skill load &lt;name&gt;</code> 可按需加载到当前上下文。
+      </div>
+
+      {filtered.length === 0 ? (
+        <div style={styles.emptyHint}>
+          {search ? '没有匹配的 Skill' : '暂无可用的 Skill 文件（请在 .vesper-lite/skills/ 中放入 Markdown 格式技能）'}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5em', marginTop: '0.5em' }}>
+          {filtered.map(s => {
+            const isLoaded = loadedSkills.includes(s.name) || loadedSkills.includes(s.path.replace(/\.md$/, ''));
+
+            return (
+              <div
+                key={s.path}
+                style={{
+                  background: 'var(--bg-secondary)',
+                  border: `1px solid ${isLoaded ? 'var(--status-success-dark)' : 'var(--border-color)'}`,
+                  borderRadius: '3px',
+                  padding: '0.5em 0.8ch',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '1ch',
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2em' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.8ch' }}>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>
+                      {s.name}
+                    </span>
+                    <span style={{ color: theme.dimText, fontSize: '0.8em', fontFamily: 'monospace' }}>
+                      ({s.path})
+                    </span>
+                    {isLoaded && (
+                      <span style={{
+                        padding: '1px 6px',
+                        background: 'var(--status-success-dark)',
+                        color: 'var(--status-success-light)',
+                        borderRadius: '2px',
+                        fontSize: '0.75em',
+                        fontWeight: 'bold',
+                      }}>
+                        ✓ 已在此会话加载
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ color: theme.dimText, fontSize: '0.85em' }}>
+                    {s.description || '(暂无描述)'}
+                  </div>
+                </div>
+
+                <div style={{ color: theme.dimText, fontSize: '0.8em', whiteSpace: 'nowrap' }}>
+                  <code>/skill load {s.name}</code>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
