@@ -60,11 +60,15 @@ interface ProfileConfig {
 const GLOBAL_TABS: { id: TabId; label: string }[] = [
   { id: 'common', label: '常规 (Common)' },
   { id: 'profiles', label: '配置方案 (Profiles)' },
+  { id: 'tools', label: '工具列表 (Tools)' },
+  { id: 'skills', label: 'Skill 列表 (Skills)' },
 ];
 
 const PROJECT_TABS: { id: TabId; label: string }[] = [
   { id: 'common', label: '常规 (Common)' },
   { id: 'profiles', label: '配置方案 (Profiles)' },
+  { id: 'tools', label: '工具列表 (Tools)' },
+  { id: 'skills', label: 'Skill 列表 (Skills)' },
 ];
 
 // Keys that belong to project-level config (stored in .vesper-lite/config.json)
