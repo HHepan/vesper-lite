@@ -593,10 +593,14 @@ export class LiteServer {
             case 'sessions':
               session.loop.sessionList();
               break;
-            case 'export':
-              if (arg) session.loop.sessionExport(arg);
+            case 'export': {
+              const exportParts = arg.split(/\s+/);
+              const targetName = exportParts[0];
+              const outPath = exportParts.slice(1).join(' ') || undefined;
+              if (targetName) session.loop.sessionExport(targetName, outPath);
               else ws.send(JSON.stringify({ type: 'error', sessionId: sid, id: msg.id, error: { message: 'Usage: /export <name> [path]' } }));
               break;
+            }
             case 'import':
               if (arg) session.loop.sessionImport(arg);
               else ws.send(JSON.stringify({ type: 'error', sessionId: sid, id: msg.id, error: { message: 'Usage: /import <path>' } }));

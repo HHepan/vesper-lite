@@ -263,19 +263,26 @@ export function createSessionManager(dbPath?: string): SessionManager {
     },
 
     load(sessionId: string, checkpointId?: string): AgentState {
-      const session = selectSession.get(sessionId) as any;
+      let resolvedId = sessionId;
+      let session = selectSession.get(sessionId) as any;
       if (!session) {
-        throw new Error(`Session "${sessionId}" not found.`);
+        const byName = selectSessionByName.get(sessionId) as any;
+        if (byName) {
+          session = byName;
+          resolvedId = byName.id;
+        } else {
+          throw new Error(`Session "${sessionId}" not found.`);
+        }
       }
 
       let row: any;
       if (checkpointId) {
         row = selectCheckpoint.get(checkpointId) as any;
-        if (!row || row.session_id !== sessionId) {
+        if (!row || row.session_id !== resolvedId) {
           throw new Error(`Checkpoint "${checkpointId}" not found in session "${sessionId}".`);
         }
       } else {
-        row = selectLatestCheckpoint.get(sessionId) as any;
+        row = selectLatestCheckpoint.get(resolvedId) as any;
         if (!row) {
           throw new Error(`No checkpoints found for session "${sessionId}".`);
         }
