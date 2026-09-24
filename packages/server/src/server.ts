@@ -433,7 +433,6 @@ export class LiteServer {
         const loadedSkills = loop.getLoadedSkillNames();
         ws.send(JSON.stringify({
           type: 'capabilities',
-          sessionId: msg.sessionId,
           tools,
           skills,
           loadedSkills,
