@@ -1,7 +1,7 @@
 // =============================================================================
 // Vesper WebUI — Slash Command Registry (for autocomplete menu)
 //
-// Single source of truth for all TUI slash commands.
+// Single source of truth for Vesper Lite slash commands.
 // Used by InputBox to display an autocomplete picker when typing '/'.
 // =============================================================================
 
@@ -15,32 +15,24 @@ export interface SlashCommandDef {
 }
 
 export const SLASH_COMMANDS: readonly SlashCommandDef[] = [
-  { name: 'save',     description: 'Save session (overwrites if name exists)', argHint: '[name]' },
-  { name: 'load',     description: 'Load a session by name (or id)',          argHint: '<name>' },
-  { name: 'delete',   description: 'Delete a saved session',                  argHint: '<name>' },
-  { name: 'sessions', description: 'List saved sessions',                     argHint: null },
-  { name: 'export',   description: 'Export session to JSON file',             argHint: '<name> [path]' },
-  { name: 'import',   description: 'Import session from JSON file',           argHint: '<path>' },
-  { name: 'compact',  description: 'Intelligently compress canvas',         argHint: '[hint]' },
-  { name: 'call_curator', description: 'Run curator directly (no LLM round)', argHint: '[hint]' },
-  { name: 'dump',     description: 'Dump prompt JSON to file',              argHint: null },
-  { name: 'canvas',   description: 'Browse and manage canvas blocks',       argHint: null },
-  { name: 'clear',    description: 'Reset canvas to initial state',        argHint: null },
-  { name: 'cd',       description: 'Change working directory',             argHint: '<path>' },
-  { name: 'add-dir',  description: 'Allow bash access to a directory',     argHint: '<path>' },
-  { name: 'clear-permissions', description: 'Clear all saved permission rules', argHint: null },
-  { name: 'toolset', description: 'Switch toolset or list available', argHint: '[list|<name>]' },
-  { name: 'skill',   description: 'Load/unload/list skills',               argHint: '[list|load|unload] [<name>]' },
-  { name: 'import-skill', description: 'Import skill from ClawHub zip or directory', argHint: '<path>' },
-  { name: 'persona', description: 'Switch persona or show current status', argHint: '[<name>|reset]' },
-  { name: 'save-persona', description: 'Save current config as a new persona', argHint: '<name> <display_name> <description>' },
-  { name: 'delete-persona', description: 'Delete a user persona', argHint: '<name>' },
-  { name: 'tool', description: 'Manage tool permission overlay', argHint: '[allow|deny <pattern>]' },
-  { name: 'supervise', description: 'Enable supervisor mode (auto-approve with rules)', argHint: '<rules...>' },
-  { name: 'unsupervise', description: 'Disable supervisor mode', argHint: null },
-  { name: 'provider', description: 'Switch LLM provider profile or show current', argHint: '[<profile>]' },
-  { name: 'memory',   description: 'Consolidate & recall cross-session memories', argHint: '[hint]' },
-  { name: 'save_dataset', description: 'Save session as dataset (per-ego JSONL)', argHint: '[name]' },
+  // ── 会话与状态管理 ──
+  { name: 'clear',    description: '重置/清空画布会话记录',                argHint: null },
+  { name: 'save',     description: '保存当前会话快照',                     argHint: '[name]' },
+  { name: 'load',     description: '加载已保存的会话快照',                 argHint: '<name>' },
+  { name: 'delete',   description: '删除指定的已保存会话',                 argHint: '<name>' },
+  { name: 'sessions', description: '列出所有已保存的会话列表',             argHint: null },
+  { name: 'export',   description: '导出当前会话为 JSON 文件',             argHint: '<name> [path]' },
+  { name: 'import',   description: '从 JSON 文件导入会话',                 argHint: '<path>' },
+  { name: 'rollback', description: '回滚到指定检查点 (Checkpoint)',        argHint: '<checkpointId>' },
+
+  // ── 画布与任务 ──
+  { name: 'pin',      description: '固定一段重要内容到置顶区 (永不折叠)',    argHint: '<content>' },
+  { name: 'canvas',   description: '查看画布块快照状态',                   argHint: null },
+  { name: 'task',     description: '查询当前任务跟踪列表 (Tasks)',         argHint: null },
+
+  // ── 技能与环境 ──
+  { name: 'skill',    description: '列出/加载/卸载/清空提示词 Skill',      argHint: '[list|load|unload|clear] [<name>]' },
+  { name: 'cd',       description: '切换工作区目录',                       argHint: '<path>' },
 ];
 
 /**
