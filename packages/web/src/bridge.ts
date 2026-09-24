@@ -264,6 +264,10 @@ export function createBridge(): Bridge {
       send({ cmd: 'list_profiles' });
     },
 
+    queryCapabilities(sessionId?: string) {
+      send({ cmd: 'query_capabilities', ...(sessionId ? { sessionId } : {}) } as ServerCommand);
+    },
+
     sendCommand(sessionId: string, command: CoreCommand) {
       send({ ...command, sessionId } as ServerCommand);
     },
